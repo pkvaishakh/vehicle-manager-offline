@@ -2,12 +2,16 @@
 Vehicles List Page - CRUD operations and filtering
 """
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 from styles import COLORS, FONTS
-from database import (get_all_vehicles, delete_vehicle,
-                      get_vehicle_by_id)
+from database import (
+    get_all_vehicles,
+    delete_vehicle,
+    get_vehicle_by_id,
+    log_message,
+    set_call_status,
+)
 from whatsapp_sender import format_message, send_whatsapp_message
-from database import log_message
 from import_export import (export_to_csv, export_to_pdf,
                            import_from_csv, import_from_json,
                            generate_sample_csv)
@@ -87,6 +91,16 @@ class VehiclesPage:
             state="readonly", width=12, font=FONTS["small"])
         self.filter_status.set("All")
         self.filter_status.pack(side="left", padx=(5, 0))
+
+        tk.Label(row1, text="Call Status:", font=FONTS["small"],
+                 bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
+                 ).pack(side="left", padx=(15, 0))
+        self.filter_call_status = ttk.Combobox(
+            row1,
+            values=["All", "No response", "Call Now", "Call Again", "Success"],
+            state="readonly", width=12, font=FONTS["small"])
+        self.filter_call_status.set("All")
+        self.filter_call_status.pack(side="left", padx=(5, 0))
 
         # Row 2: Date filters + buttons
         row2 = tk.Frame(inner, bg=COLORS["bg_card"])
@@ -709,7 +723,8 @@ class VehiclesPage:
             ("📥 Import CSV", COLORS["info"], self.import_csv),
             ("📤 Export CSV", COLORS["secondary"], self.export_csv),
             ("� Export PDF", COLORS["secondary"], self.export_pdf),
-            ("📄 Sample CSV", COLORS["text_light"],
+            ("� Share List", COLORS["primary"], self.share_search_results_whatsapp),
+            ("�📄 Sample CSV", COLORS["text_light"],
              self.download_sample),
         ]
 
@@ -729,7 +744,7 @@ class VehiclesPage:
         columns = (
             "id", "vehicle_number", "owner_name", "phone",
             "vehicle_type", "expiry_date",
-            "status", "renewals", "updated_at"
+            "status", "call_status", "renewals", "updated_at"
         )
 
         tree_scroll_y = ttk.Scrollbar(table_frame)
@@ -761,6 +776,7 @@ class VehiclesPage:
             "vehicle_type": ("Type", 90),
             "expiry_date": ("Expiry Date", 110),
             "status": ("Status", 110),
+            "call_status": ("Call Status", 120),
             "renewals": ("Renewals", 80),
             "updated_at": ("Updated", 160),
         }
@@ -780,6 +796,17 @@ class VehiclesPage:
         self.context_menu.add_separator()
         self.context_menu.add_command(label="💬 Send WhatsApp",
                                       command=self.send_whatsapp_selected)
+        self.context_menu.add_separator()
+
+        # Call status submenu
+        call_status_menu = tk.Menu(self.context_menu, tearoff=0)
+        for status in ["No response", "Call Now", "Call Again", "Success"]:
+            call_status_menu.add_command(
+                label=status,
+                command=lambda s=status: self.set_selected_call_status(s))
+        self.context_menu.add_cascade(label="📞 Set Call Status",
+                                      menu=call_status_menu)
+
         self.context_menu.add_separator()
         self.context_menu.add_command(label="📋 Copy Vehicle No",
                                       command=self.copy_vehicle_number)
@@ -824,6 +851,10 @@ class VehiclesPage:
             filters["status"] = "expired"
         elif status == "Expiring Soon":
             filters["status"] = "expiring_soon"
+
+        call_status = self.filter_call_status.get()
+        if call_status and call_status != "All":
+            filters["call_status"] = call_status
 
         # ✅ Date filters
         if self.filter_date_from_value:
@@ -872,6 +903,7 @@ class VehiclesPage:
                 v.get("vehicle_type", ""),
                 v["expiry_date"],
                 status,
+                v.get("call_status", "No response"),
                 v.get("renewal_count", 0),
                 v.get("updated_at", v.get("created_at", ""))
             ), tags=(tag,))
@@ -1011,6 +1043,59 @@ class VehiclesPage:
             "WhatsApp",
             f"WhatsApp opened for {count} vehicle(s).\n"
             "Please click Send in WhatsApp for each message.")
+
+    def share_search_results_whatsapp(self):
+        """Share the current search results (vehicle + phone) via WhatsApp."""
+        filters = self.get_filters()
+        vehicles = get_all_vehicles(filters)
+
+        if not vehicles:
+            messagebox.showinfo(
+                "Share List",
+                "No vehicles match the current filter. Please adjust filters and try again.")
+            return
+
+        # Build message text
+        lines = ["Vehicle List (Number - Phone):"]
+        for v in vehicles:
+            lines.append(f"{v['vehicle_number']} - {v['phone']}")
+
+        body = "\n".join(lines)
+
+        # Ask for recipient phone number
+        recipient = simpledialog.askstring(
+            "Share via WhatsApp",
+            "Enter recipient phone number (with country code):")
+
+        if not recipient:
+            return
+
+        success = send_whatsapp_message(recipient, body, auto_send=False)
+        if success:
+            messagebox.showinfo(
+                "WhatsApp",
+                "WhatsApp opened with the list. Please send the message.")
+        else:
+            messagebox.showerror(
+                "WhatsApp",
+                "Could not open WhatsApp. Please ensure WhatsApp is installed and try again.")
+
+    def set_selected_call_status(self, status):
+        """Update call status for selected vehicle(s)."""
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning",
+                                   "Please select vehicle(s) to update!")
+            return
+
+        for item in selection:
+            values = self.tree.item(item)["values"]
+            vehicle_id = values[0]
+            set_call_status(vehicle_id, status)
+
+        self.load_vehicles()
+        self.status_label.configure(
+            text=f"Call status set to '{status}' for {len(selection)} vehicle(s)")
 
     def show_context_menu(self, event):
         item = self.tree.identify_row(event.y)

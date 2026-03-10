@@ -41,6 +41,7 @@ def initialize_database():
             vehicle_type TEXT DEFAULT '',
             expiry_date TEXT NOT NULL,
             notes TEXT DEFAULT '',
+            call_status TEXT DEFAULT 'Call Now',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             renewal_count INTEGER DEFAULT 0
@@ -58,6 +59,13 @@ def initialize_database():
             FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
         )
     """)
+
+    # Ensure `call_status` column exists in vehicles table (migration for older DBs)
+    cursor.execute("PRAGMA table_info(vehicles)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if "call_status" not in columns:
+        cursor.execute("ALTER TABLE vehicles ADD COLUMN call_status TEXT DEFAULT 'Call Now'")
+
     conn.commit()
     conn.close()
 
@@ -76,11 +84,11 @@ def add_vehicle(vehicle_number, phone, expiry_date, owner_name="",
         cursor.execute("""
             UPDATE vehicles SET
                 phone = ?, expiry_date = ?, owner_name = ?,
-                vehicle_type = ?, notes = ?, updated_at = ?,
-                renewal_count = renewal_count + 1
+                vehicle_type = ?, notes = ?, call_status = ?,
+                updated_at = ?, renewal_count = renewal_count + 1
             WHERE vehicle_number = ?
         """, (phone, expiry_date, owner_name, vehicle_type,
-              notes, now, vehicle_number.upper()))
+              notes, "Call Now", now, vehicle_number.upper()))
         conn.commit()
         conn.close()
         return "renewed"
@@ -88,10 +96,10 @@ def add_vehicle(vehicle_number, phone, expiry_date, owner_name="",
         cursor.execute("""
             INSERT INTO vehicles
             (vehicle_number, phone, expiry_date, owner_name,
-             vehicle_type, notes, created_at, updated_at, renewal_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+             vehicle_type, notes, call_status, created_at, updated_at, renewal_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         """, (vehicle_number.upper(), phone, expiry_date, owner_name,
-              vehicle_type, notes, now, now))
+              vehicle_type, notes, "Call Now", now, now))
         conn.commit()
         conn.close()
         return "added"
@@ -121,6 +129,17 @@ def update_vehicle(vehicle_id, vehicle_number, phone, expiry_date,
     conn.commit()
     conn.close()
     return "updated"
+
+
+def set_call_status(vehicle_id, status):
+    """Update the call status for a vehicle without touching updated_at."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE vehicles SET call_status = ? WHERE id = ?",
+        (status, vehicle_id))
+    conn.commit()
+    conn.close()
 
 
 def delete_vehicle(vehicle_id):
@@ -191,6 +210,10 @@ def get_all_vehicles(filters=None):
             query += " AND expiry_date >= ? AND expiry_date <= ?"
             params.append(date.today().strftime("%Y-%m-%d"))
             params.append(soon)
+
+        if filters.get("call_status") and filters.get("call_status") != "All":
+            query += " AND call_status = ?"
+            params.append(filters.get("call_status"))
 
     # Sort vehicles by most recently updated first (new records and renewals update `updated_at`)
     query += " ORDER BY updated_at DESC"
