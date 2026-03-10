@@ -723,7 +723,7 @@ class VehiclesPage:
             ("📥 Import CSV", COLORS["info"], self.import_csv),
             ("📤 Export CSV", COLORS["secondary"], self.export_csv),
             ("� Export PDF", COLORS["secondary"], self.export_pdf),
-            ("� Share List", COLORS["primary"], self.share_search_results_whatsapp),
+            ("� Share Call Sheet", COLORS["primary"], self.share_search_results_whatsapp),
             ("�📄 Sample CSV", COLORS["text_light"],
              self.download_sample),
         ]
@@ -1051,7 +1051,7 @@ class VehiclesPage:
 
         if not vehicles:
             messagebox.showinfo(
-                "Share List",
+                "Share Call Sheet",
                 "No vehicles match the current filter. Please adjust filters and try again.")
             return
 

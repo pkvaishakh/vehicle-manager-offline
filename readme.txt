@@ -49,6 +49,27 @@ python build_icon.py
 python build.py
 
 
+-------------------------------------------------
+✅ To “start fresh” (clear caches + rebuild)
+-------------------------------------------------
+1) Delete old PyInstaller build outputs (cache + exe)
+rmdir /s /q build
+rmdir /s /q dist
+del /q *.spec
+
+✅ This removes:
+build (PyInstaller temporary build cache)
+dist (previous EXE outputs)
+any old *.spec files 
+
+2) Delete Python bytecode caches (optional but cleanest) 
+del /s /q *.pyc
+rmdir /s /q __pycache__
+
+✅ This removes 
+all .pyc files and __pycache__ folders so Python will recompile everything.
+
+
 =============================================================
 Final Project Structure
 =============================================================
