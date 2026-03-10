@@ -1,0 +1,92 @@
+========================================
+  Vehicle Management System v1.0
+========================================
+
+HOW TO RUN:
+  Double-click VehicleManager.exe
+
+DATA LOCATION:
+  All data is saved in the same folder
+  as VehicleManager.exe
+
+  vehicles.db = Your vehicle database
+  (DO NOT delete this file!)
+
+BACKUP:
+  Copy vehicles.db to a safe location
+
+IMPORT DATA:
+  Prepare CSV with columns:
+  vehicle_number, phone, expiry_date
+
+  Click: Vehicles → Import CSV
+
+REQUIREMENTS:
+  - Windows 10/11
+  - WhatsApp Desktop (for auto-send)
+  - No Python installation needed!
+
+========================================
+
+
+
+
+
+What Users See When They Click "📂 Data Folder"
+
+┌──────────────────────────────────────────────┐
+│           Data Location                      │
+├──────────────────────────────────────────────┤
+│                                              │
+│ 📁 Data Folder:                              │
+│ C:\Users\vaish\Desktop\VehicleManager        │
+│                                              │
+│ 📊 Database: vehicles.db                     │
+│    Status: ✅ EXISTS                         │
+│    Size: 256.0 KB                            │
+│                                              │
+│ 📄 Files in folder:                          │
+│    VehicleManager.exe (45.2 MB)              │
+│    vehicles.db (256.0 KB)                    │
+│                                              │
+│                              [ OK ]          │
+└──────────────────────────────────────────────┘
+
++ Opens Windows File Explorer to that folder
+
+
+
+Backup & Move Data
+
+To BACKUP your data:
+   Copy: vehicles.db → somewhere safe
+
+To MOVE to another PC:
+   Copy these files:
+   ├── VehicleManager.exe
+   └── vehicles.db          ← Your data!
+
+To RESET (fresh start):
+   Delete: vehicles.db
+   (App creates new empty database on next run)
+
+
+Distribution Package
+
+📁 VehicleManager/              ← Give this folder to users
+├── VehicleManager.exe          ← Double-click to run
+├── README.txt                  ← Instructions (optional)
+│
+│  (These are auto-created on first run):
+├── vehicles.db                 ← Database
+│
+│  (Users create these):
+├── exports/                    ← Optional export folder
+│   ├── vehicles_export.csv
+│   └── vehicles_export.json
+│
+└── backups/                    ← Optional backup folder
+    └── vehicles_backup.db
+
+
+
