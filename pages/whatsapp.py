@@ -214,8 +214,8 @@ class WhatsAppPage:
                  font=FONTS["small_bold"],
                  bg=COLORS["bg_card"]).pack(side="left")
 
-        self.wait_time_var = tk.IntVar(value=10)
-        ttk.Spinbox(wait_frame, from_=5, to=30,
+        self.wait_time_var = tk.IntVar(value=15)
+        ttk.Spinbox(wait_frame, from_=15, to=30,
                      textvariable=self.wait_time_var,
                      width=5, font=FONTS["input"]).pack(
             side="left", padx=(10, 5))
@@ -509,8 +509,8 @@ class WhatsAppPage:
                  font=FONTS["small_bold"],
                  bg=COLORS["bg_card"]).pack(side="left")
 
-        self.delay_var = tk.IntVar(value=12)
-        ttk.Spinbox(delay_frame, from_=8, to=60,
+        self.delay_var = tk.IntVar(value=15)
+        ttk.Spinbox(delay_frame, from_=15, to=60,
                      textvariable=self.delay_var,
                      width=5, font=FONTS["input"]).pack(
             side="left", padx=(10, 5))

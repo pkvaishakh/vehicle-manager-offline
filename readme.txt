@@ -48,7 +48,9 @@ Option 3: With Icon
 python build_icon.py
 python build.py
 
-
+option 4:
+ .\.venv\Scripts\pyinstaller.exe --clean --onefile --windowed --icon app_icon.ico --name VehicleManager main.py
+ 
 -------------------------------------------------
 ✅ To “start fresh” (clear caches + rebuild)
 -------------------------------------------------
