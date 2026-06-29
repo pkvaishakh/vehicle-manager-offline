@@ -1,6 +1,4 @@
-"""
-Vehicles List Page - CRUD operations and filtering
-"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 from styles import COLORS, FONTS
@@ -68,37 +66,31 @@ class VehiclesPage:
         tk.Label(row1, text="Vehicle No:", font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
                  ).pack(side="left")
-        self.filter_vehicle = tk.Entry(row1, font=FONTS["input"], width=14)
+        self.filter_vehicle = tk.Entry(row1, font=FONTS["input"], width=16)
         self.filter_vehicle.pack(side="left", padx=(5, 15))
 
         tk.Label(row1, text="Phone:", font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
                  ).pack(side="left")
-        self.filter_phone = tk.Entry(row1, font=FONTS["input"], width=14)
+        self.filter_phone = tk.Entry(row1, font=FONTS["input"], width=16)
         self.filter_phone.pack(side="left", padx=(5, 15))
-
-        tk.Label(row1, text="Owner:", font=FONTS["small"],
-                 bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
-                 ).pack(side="left")
-        self.filter_owner = tk.Entry(row1, font=FONTS["input"], width=14)
-        self.filter_owner.pack(side="left", padx=(5, 15))
 
         tk.Label(row1, text="Status:", font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
                  ).pack(side="left")
         self.filter_status = ttk.Combobox(
             row1, values=["All", "Active", "Expired", "Expiring Soon"],
-            state="readonly", width=12, font=FONTS["small"])
+            state="readonly", width=14, font=FONTS["small"])
         self.filter_status.set("All")
-        self.filter_status.pack(side="left", padx=(5, 0))
+        self.filter_status.pack(side="left", padx=(5, 15))
 
         tk.Label(row1, text="Call Status:", font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
-                 ).pack(side="left", padx=(15, 0))
+                 ).pack(side="left")
         self.filter_call_status = ttk.Combobox(
             row1,
             values=["All", "No response", "Call Now", "Call Again", "Success"],
-            state="readonly", width=12, font=FONTS["small"])
+            state="readonly", width=14, font=FONTS["small"])
         self.filter_call_status.set("All")
         self.filter_call_status.pack(side="left", padx=(5, 0))
 
@@ -139,19 +131,13 @@ class VehiclesPage:
         self.date_from_clear.pack(side="left", padx=(3, 0))
         self.date_from_clear.bind(
             "<Button-1>", lambda e: self.clear_date_filter("from"))
-        self.date_from_clear.pack_forget()  # Hide initially
+        self.date_from_clear.pack_forget()
 
-        # Bind clicks
         for w in [self.date_from_frame, self.date_from_inner,
                   self.date_from_icon, self.date_from_text]:
-            w.bind("<Button-1>",
-                   lambda e: self.open_filter_calendar("from"))
-            w.bind("<Enter>",
-                   lambda e: self.date_from_frame.configure(
-                       highlightbackground=COLORS["primary"]))
-            w.bind("<Leave>",
-                   lambda e: self.date_from_frame.configure(
-                       highlightbackground=COLORS["border"]))
+            w.bind("<Button-1>", lambda e: self.open_filter_calendar("from"))
+            w.bind("<Enter>", lambda e: self.date_from_frame.configure(highlightbackground=COLORS["primary"]))
+            w.bind("<Leave>", lambda e: self.date_from_frame.configure(highlightbackground=COLORS["border"]))
 
         # ===== EXPIRY DATE TO =====
         tk.Label(row2, text="To:", font=FONTS["small"],
@@ -186,19 +172,13 @@ class VehiclesPage:
         self.date_to_clear.pack(side="left", padx=(3, 0))
         self.date_to_clear.bind(
             "<Button-1>", lambda e: self.clear_date_filter("to"))
-        self.date_to_clear.pack_forget()  # Hide initially
+        self.date_to_clear.pack_forget()
 
-        # Bind clicks
         for w in [self.date_to_frame, self.date_to_inner,
                   self.date_to_icon, self.date_to_text]:
-            w.bind("<Button-1>",
-                   lambda e: self.open_filter_calendar("to"))
-            w.bind("<Enter>",
-                   lambda e: self.date_to_frame.configure(
-                       highlightbackground=COLORS["primary"]))
-            w.bind("<Leave>",
-                   lambda e: self.date_to_frame.configure(
-                       highlightbackground=COLORS["border"]))
+            w.bind("<Button-1>", lambda e: self.open_filter_calendar("to"))
+            w.bind("<Enter>", lambda e: self.date_to_frame.configure(highlightbackground=COLORS["primary"]))
+            w.bind("<Leave>", lambda e: self.date_to_frame.configure(highlightbackground=COLORS["border"]))
 
         # ===== UPDATED DATE FROM =====
         tk.Label(row2, text="Updated From:", font=FONTS["small"],
@@ -233,7 +213,7 @@ class VehiclesPage:
         self.updated_from_clear.pack(side="left", padx=(3, 0))
         self.updated_from_clear.bind(
             "<Button-1>", lambda e: self.clear_date_filter("updated_from"))
-        self.updated_from_clear.pack_forget()  # Hide initially
+        self.updated_from_clear.pack_forget()
 
         # ===== UPDATED DATE TO =====
         tk.Label(row2, text="To:", font=FONTS["small"],
@@ -268,30 +248,19 @@ class VehiclesPage:
         self.updated_to_clear.pack(side="left", padx=(3, 0))
         self.updated_to_clear.bind(
             "<Button-1>", lambda e: self.clear_date_filter("updated_to"))
-        self.updated_to_clear.pack_forget()  # Hide initially
+        self.updated_to_clear.pack_forget()
 
-        # Bind clicks
         for w in [self.updated_from_frame, self.updated_from_inner,
                   self.updated_from_icon, self.updated_from_text]:
-            w.bind("<Button-1>",
-                   lambda e: self.open_filter_calendar("updated_from"))
-            w.bind("<Enter>",
-                   lambda e: self.updated_from_frame.configure(
-                       highlightbackground=COLORS["primary"]))
-            w.bind("<Leave>",
-                   lambda e: self.updated_from_frame.configure(
-                       highlightbackground=COLORS["border"]))
+            w.bind("<Button-1>", lambda e: self.open_filter_calendar("updated_from"))
+            w.bind("<Enter>", lambda e: self.updated_from_frame.configure(highlightbackground=COLORS["primary"]))
+            w.bind("<Leave>", lambda e: self.updated_from_frame.configure(highlightbackground=COLORS["border"]))
 
         for w in [self.updated_to_frame, self.updated_to_inner,
                   self.updated_to_icon, self.updated_to_text]:
-            w.bind("<Button-1>",
-                   lambda e: self.open_filter_calendar("updated_to"))
-            w.bind("<Enter>",
-                   lambda e: self.updated_to_frame.configure(
-                       highlightbackground=COLORS["primary"]))
-            w.bind("<Leave>",
-                   lambda e: self.updated_to_frame.configure(
-                       highlightbackground=COLORS["border"]))
+            w.bind("<Button-1>", lambda e: self.open_filter_calendar("updated_to"))
+            w.bind("<Enter>", lambda e: self.updated_to_frame.configure(highlightbackground=COLORS["primary"]))
+            w.bind("<Leave>", lambda e: self.updated_to_frame.configure(highlightbackground=COLORS["border"]))
 
         # ===== Quick date filter buttons =====
         tk.Label(row2, text="│", font=FONTS["small"],
@@ -310,12 +279,8 @@ class VehiclesPage:
                 relief="solid", borderwidth=1)
             qbtn.pack(side="left", padx=2)
             qbtn.bind("<Button-1>", lambda e, c=cmd: c())
-            qbtn.bind("<Enter>",
-                      lambda e, b=qbtn: b.configure(
-                          bg=COLORS["primary"], fg="white"))
-            qbtn.bind("<Leave>",
-                      lambda e, b=qbtn: b.configure(
-                          bg=COLORS["bg"], fg=COLORS["primary"]))
+            qbtn.bind("<Enter>", lambda e, b=qbtn: b.configure(bg=COLORS["primary"], fg="white"))
+            qbtn.bind("<Leave>", lambda e, b=qbtn: b.configure(bg=COLORS["bg"], fg=COLORS["primary"]))
 
         # ===== Separator and Search/Clear =====
         tk.Label(row2, text="│", font=FONTS["small"],
@@ -339,14 +304,12 @@ class VehiclesPage:
         # Bind Enter key
         self.filter_vehicle.bind("<Return>", lambda e: self.load_vehicles())
         self.filter_phone.bind("<Return>", lambda e: self.load_vehicles())
-        self.filter_owner.bind("<Return>", lambda e: self.load_vehicles())
 
     # =============================================
     # DATE FILTER CALENDAR METHODS
     # =============================================
 
     def open_filter_calendar(self, which):
-        """Open calendar popup for date filter"""
         self.close_filter_calendar()
 
         self.active_calendar_popup = tk.Toplevel(self.parent)
@@ -356,7 +319,6 @@ class VehiclesPage:
             highlightbackground=COLORS["primary"],
             highlightthickness=2)
 
-        # Position below the date field
         if which == "from":
             ref = self.date_from_frame
             current = self.filter_date_from_value
@@ -382,7 +344,6 @@ class VehiclesPage:
         main = tk.Frame(self.active_calendar_popup, bg=COLORS["bg_card"])
         main.pack(fill="both", expand=True, padx=1, pady=1)
 
-        # Header
         header = tk.Frame(main, bg=COLORS["primary"])
         header.pack(fill="x")
 
@@ -411,7 +372,6 @@ class VehiclesPage:
                 borderwidth=0, cursor="hand2")
             cal.pack(padx=8, pady=5)
 
-            # Quick dates
             qframe = tk.Frame(main, bg=COLORS["bg_card"])
             qframe.pack(fill="x", padx=8, pady=(0, 5))
 
@@ -428,16 +388,10 @@ class VehiclesPage:
                               padx=5, pady=2, cursor="hand2",
                               relief="solid", borderwidth=1)
                 qb.pack(side="left", padx=1)
-                qb.bind("<Button-1>",
-                        lambda e, d=target, c=cal: c.selection_set(d))
-                qb.bind("<Enter>",
-                        lambda e, b=qb: b.configure(
-                            bg=COLORS["primary"], fg="white"))
-                qb.bind("<Leave>",
-                        lambda e, b=qb: b.configure(
-                            bg=COLORS["bg"], fg=COLORS["primary"]))
+                qb.bind("<Button-1>", lambda e, d=target, c=cal: c.selection_set(d))
+                qb.bind("<Enter>", lambda e, b=qb: b.configure(bg=COLORS["primary"], fg="white"))
+                qb.bind("<Leave>", lambda e, b=qb: b.configure(bg=COLORS["bg"], fg=COLORS["primary"]))
 
-            # Buttons
             bframe = tk.Frame(main, bg=COLORS["bg_card"])
             bframe.pack(fill="x", padx=8, pady=(0, 8))
 
@@ -446,39 +400,30 @@ class VehiclesPage:
                 bg=COLORS["primary"], fg="white",
                 padx=12, pady=4, cursor="hand2")
             select_btn.pack(side="left", padx=(0, 5))
-            select_btn.bind("<Button-1>",
-                            lambda e, w=which, c=cal:
-                            self.set_date_filter(w, c.selection_get()))
+            select_btn.bind("<Button-1>", lambda e, w=which, c=cal: self.set_date_filter(w, c.selection_get()))
 
             cancel_btn = tk.Label(
                 bframe, text="✖ Cancel", font=FONTS["small_bold"],
                 bg=COLORS["secondary"], fg="white",
                 padx=12, pady=4, cursor="hand2")
             cancel_btn.pack(side="left")
-            cancel_btn.bind("<Button-1>",
-                            lambda e: self.close_filter_calendar())
+            cancel_btn.bind("<Button-1>", lambda e: self.close_filter_calendar())
 
-            # Double click selects
-            cal.bind("<<CalendarSelected>>",
-                     lambda e, w=which, c=cal:
-                     self.set_date_filter(w, c.selection_get()))
+            cal.bind("<<CalendarSelected>>", lambda e, w=which, c=cal: self.set_date_filter(w, c.selection_get()))
 
         else:
-            # Fallback without tkcalendar
             self.build_custom_filter_calendar(main, which, current)
 
         self.active_calendar_popup.lift()
         self.active_calendar_popup.focus_set()
 
     def build_custom_filter_calendar(self, parent, which, current):
-        """Custom calendar for filter (fallback)"""
         init = current if current else date.today()
 
         self._cal_year = init.year
         self._cal_month = init.month
         self._cal_which = which
 
-        # Navigation
         nav = tk.Frame(parent, bg=COLORS["bg_card"])
         nav.pack(fill="x", padx=8, pady=5)
 
@@ -501,19 +446,16 @@ class VehiclesPage:
         self._cal_days_frame = tk.Frame(parent, bg=COLORS["bg_card"])
         self._cal_days_frame.pack(fill="x", padx=8)
 
-        # Cancel
         cancel_btn = tk.Label(parent, text="✖ Cancel",
                               font=FONTS["small_bold"],
                               bg=COLORS["secondary"], fg="white",
                               padx=12, pady=4, cursor="hand2")
         cancel_btn.pack(pady=(5, 8))
-        cancel_btn.bind("<Button-1>",
-                        lambda e: self.close_filter_calendar())
+        cancel_btn.bind("<Button-1>", lambda e: self.close_filter_calendar())
 
         self._draw_filter_cal()
 
     def _cal_nav(self, direction, parent):
-        """Navigate custom calendar months"""
         self._cal_month += direction
         if self._cal_month > 12:
             self._cal_month = 1
@@ -524,7 +466,6 @@ class VehiclesPage:
         self._draw_filter_cal()
 
     def _draw_filter_cal(self):
-        """Draw custom filter calendar grid"""
         for w in self._cal_days_frame.winfo_children():
             w.destroy()
 
@@ -559,69 +500,51 @@ class VehiclesPage:
                         bg=bg, fg=fg, width=4, height=1,
                         cursor="hand2")
                     lbl.grid(row=ri+1, column=ci, padx=1, pady=1)
-                    lbl.bind("<Button-1>",
-                             lambda e, dt=d:
-                             self.set_date_filter(self._cal_which, dt))
+                    lbl.bind("<Button-1>", lambda e, dt=d: self.set_date_filter(self._cal_which, dt))
 
     def set_date_filter(self, which, selected_date):
-        """Set a date filter value"""
         if which == "from":
             self.filter_date_from_value = selected_date
-            self.date_from_text.configure(
-                text=selected_date.strftime("%Y-%m-%d"),
-                fg=COLORS["text"])
+            self.date_from_text.configure(text=selected_date.strftime("%Y-%m-%d"), fg=COLORS["text"])
             self.date_from_clear.pack(side="left", padx=(3, 0))
         elif which == "to":
             self.filter_date_to_value = selected_date
-            self.date_to_text.configure(
-                text=selected_date.strftime("%Y-%m-%d"),
-                fg=COLORS["text"])
+            self.date_to_text.configure(text=selected_date.strftime("%Y-%m-%d"), fg=COLORS["text"])
             self.date_to_clear.pack(side="left", padx=(3, 0))
         elif which == "updated_from":
             self.filter_updated_from_value = selected_date
-            self.updated_from_text.configure(
-                text=selected_date.strftime("%Y-%m-%d"),
-                fg=COLORS["text"])
+            self.updated_from_text.configure(text=selected_date.strftime("%Y-%m-%d"), fg=COLORS["text"])
             self.updated_from_clear.pack(side="left", padx=(3, 0))
         else:
             self.filter_updated_to_value = selected_date
-            self.updated_to_text.configure(
-                text=selected_date.strftime("%Y-%m-%d"),
-                fg=COLORS["text"])
+            self.updated_to_text.configure(text=selected_date.strftime("%Y-%m-%d"), fg=COLORS["text"])
             self.updated_to_clear.pack(side="left", padx=(3, 0))
 
         self.close_filter_calendar()
-        self.load_vehicles()  # Auto search
+        self.load_vehicles()
 
     def clear_date_filter(self, which):
-        """Clear a date filter"""
         if which == "from":
             self.filter_date_from_value = None
-            self.date_from_text.configure(
-                text="Any", fg=COLORS["text_secondary"])
+            self.date_from_text.configure(text="Any", fg=COLORS["text_secondary"])
             self.date_from_clear.pack_forget()
         elif which == "to":
             self.filter_date_to_value = None
-            self.date_to_text.configure(
-                text="Any", fg=COLORS["text_secondary"])
+            self.date_to_text.configure(text="Any", fg=COLORS["text_secondary"])
             self.date_to_clear.pack_forget()
         elif which == "updated_from":
             self.filter_updated_from_value = None
-            self.updated_from_text.configure(
-                text="Any", fg=COLORS["text_secondary"])
+            self.updated_from_text.configure(text="Any", fg=COLORS["text_secondary"])
             self.updated_from_clear.pack_forget()
         else:
             self.filter_updated_to_value = None
-            self.updated_to_text.configure(
-                text="Any", fg=COLORS["text_secondary"])
+            self.updated_to_text.configure(text="Any", fg=COLORS["text_secondary"])
             self.updated_to_clear.pack_forget()
 
-        self.load_vehicles()  # Auto refresh
+        self.load_vehicles()
 
     def close_filter_calendar(self):
-        """Close any open filter calendar popup"""
-        if self.active_calendar_popup and \
-                self.active_calendar_popup.winfo_exists():
+        if self.active_calendar_popup and self.active_calendar_popup.winfo_exists():
             self.active_calendar_popup.destroy()
         self.active_calendar_popup = None
 
@@ -630,62 +553,50 @@ class VehiclesPage:
     # =============================================
 
     def filter_today(self):
-        """Filter expiry date = today"""
         today = date.today()
         self.filter_date_from_value = today
         self.filter_date_to_value = today
-        self.date_from_text.configure(
-            text=today.strftime("%Y-%m-%d"), fg=COLORS["text"])
-        self.date_to_text.configure(
-            text=today.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_from_text.configure(text=today.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_to_text.configure(text=today.strftime("%Y-%m-%d"), fg=COLORS["text"])
         self.date_from_clear.pack(side="left", padx=(3, 0))
         self.date_to_clear.pack(side="left", padx=(3, 0))
         self.load_vehicles()
 
     def filter_this_week(self):
-        """Filter expiry date = this week"""
         from datetime import timedelta
         today = date.today()
         start = today
         end = today + timedelta(days=7)
         self.filter_date_from_value = start
         self.filter_date_to_value = end
-        self.date_from_text.configure(
-            text=start.strftime("%Y-%m-%d"), fg=COLORS["text"])
-        self.date_to_text.configure(
-            text=end.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_from_text.configure(text=start.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_to_text.configure(text=end.strftime("%Y-%m-%d"), fg=COLORS["text"])
         self.date_from_clear.pack(side="left", padx=(3, 0))
         self.date_to_clear.pack(side="left", padx=(3, 0))
         self.load_vehicles()
 
     def filter_this_month(self):
-        """Filter expiry date = this month"""
         from datetime import timedelta
         today = date.today()
         start = today
         end = today + timedelta(days=30)
         self.filter_date_from_value = start
         self.filter_date_to_value = end
-        self.date_from_text.configure(
-            text=start.strftime("%Y-%m-%d"), fg=COLORS["text"])
-        self.date_to_text.configure(
-            text=end.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_from_text.configure(text=start.strftime("%Y-%m-%d"), fg=COLORS["text"])
+        self.date_to_text.configure(text=end.strftime("%Y-%m-%d"), fg=COLORS["text"])
         self.date_from_clear.pack(side="left", padx=(3, 0))
         self.date_to_clear.pack(side="left", padx=(3, 0))
         self.load_vehicles()
 
     def filter_expired_dates(self):
-        """Filter only expired vehicles by date"""
         from datetime import timedelta
         today = date.today()
-        past = today - timedelta(days=3650)  # 10 years back
+        past = today - timedelta(days=3650)
         yesterday = today - timedelta(days=1)
         self.filter_date_from_value = past
         self.filter_date_to_value = yesterday
-        self.date_from_text.configure(
-            text="Past", fg=COLORS["danger"])
-        self.date_to_text.configure(
-            text=yesterday.strftime("%Y-%m-%d"), fg=COLORS["danger"])
+        self.date_from_text.configure(text="Past", fg=COLORS["danger"])
+        self.date_to_text.configure(text=yesterday.strftime("%Y-%m-%d"), fg=COLORS["danger"])
         self.date_from_clear.pack(side="left", padx=(3, 0))
         self.date_to_clear.pack(side="left", padx=(3, 0))
         self.load_vehicles()
@@ -705,8 +616,7 @@ class VehiclesPage:
             ("➕ Add New", COLORS["primary"], self.add_new),
             ("✏️ Edit", COLORS["warning"], self.edit_selected),
             ("🗑️ Delete", COLORS["danger"], self.delete_selected),
-            ("💬 Send WhatsApp", COLORS["whatsapp"],
-             self.send_whatsapp_selected),
+            ("💬 Send WhatsApp", COLORS["whatsapp"], self.send_whatsapp_selected),
         ]
 
         for text, color, cmd in buttons_left:
@@ -722,10 +632,9 @@ class VehiclesPage:
         buttons_right = [
             ("📥 Import CSV", COLORS["info"], self.import_csv),
             ("📤 Export CSV", COLORS["secondary"], self.export_csv),
-            ("� Export PDF", COLORS["secondary"], self.export_pdf),
-            ("� Share Call Sheet", COLORS["primary"], self.share_search_results_whatsapp),
-            ("�📄 Sample CSV", COLORS["text_light"],
-             self.download_sample),
+            ("📄 Export PDF", COLORS["secondary"], self.export_pdf),
+            ("📤 Share Call Sheet", COLORS["primary"], self.share_search_results_whatsapp),
+            ("📄 Sample CSV", COLORS["text_light"], self.download_sample),
         ]
 
         for text, color, cmd in buttons_right:
@@ -741,10 +650,10 @@ class VehiclesPage:
             highlightbackground=COLORS["border"], highlightthickness=1)
         table_frame.pack(fill="both", expand=True)
 
+        # Removed owner_name and vehicle_type; moved updated_at before expiry_date
         columns = (
-            "id", "vehicle_number", "owner_name", "phone",
-            "vehicle_type", "expiry_date",
-            "status", "call_status", "renewals", "updated_at"
+            "id", "vehicle_number", "phone", "updated_at",
+            "expiry_date", "status", "call_status", "renewals"
         )
 
         tree_scroll_y = ttk.Scrollbar(table_frame)
@@ -770,15 +679,13 @@ class VehiclesPage:
 
         col_config = {
             "id": ("ID", 50),
-            "vehicle_number": ("Vehicle No", 130),
-            "owner_name": ("Owner", 150),
-            "phone": ("Phone", 130),
-            "vehicle_type": ("Type", 90),
-            "expiry_date": ("Expiry Date", 110),
-            "status": ("Status", 110),
-            "call_status": ("Call Status", 120),
-            "renewals": ("Renewals", 80),
+            "vehicle_number": ("Vehicle No", 150),
+            "phone": ("Phone", 140),
             "updated_at": ("Updated", 160),
+            "expiry_date": ("Expiry Date", 120),
+            "status": ("Status", 110),
+            "call_status": ("Call Status", 130),
+            "renewals": ("Renewals", 90),
         }
 
         for col, (heading, width) in col_config.items():
@@ -789,27 +696,21 @@ class VehiclesPage:
         self.tree.pack(fill="both", expand=True)
 
         self.context_menu = tk.Menu(self.tree, tearoff=0)
-        self.context_menu.add_command(label="✏️ Edit",
-                                      command=self.edit_selected)
-        self.context_menu.add_command(label="🗑️ Delete",
-                                      command=self.delete_selected)
+        self.context_menu.add_command(label="✏️ Edit", command=self.edit_selected)
+        self.context_menu.add_command(label="🗑️ Delete", command=self.delete_selected)
         self.context_menu.add_separator()
-        self.context_menu.add_command(label="💬 Send WhatsApp",
-                                      command=self.send_whatsapp_selected)
+        self.context_menu.add_command(label="💬 Send WhatsApp", command=self.send_whatsapp_selected)
         self.context_menu.add_separator()
 
-        # Call status submenu
         call_status_menu = tk.Menu(self.context_menu, tearoff=0)
         for status in ["No response", "Call Now", "Call Again", "Success"]:
             call_status_menu.add_command(
                 label=status,
                 command=lambda s=status: self.set_selected_call_status(s))
-        self.context_menu.add_cascade(label="📞 Set Call Status",
-                                      menu=call_status_menu)
+        self.context_menu.add_cascade(label="📞 Set Call Status", menu=call_status_menu)
 
         self.context_menu.add_separator()
-        self.context_menu.add_command(label="📋 Copy Vehicle No",
-                                      command=self.copy_vehicle_number)
+        self.context_menu.add_command(label="📋 Copy Vehicle No", command=self.copy_vehicle_number)
 
         self.tree.bind("<Button-3>", self.show_context_menu)
         self.tree.bind("<Double-1>", lambda e: self.edit_selected())
@@ -832,7 +733,6 @@ class VehiclesPage:
         self.count_label.pack(side="right")
 
     def get_filters(self):
-        """Get current filter values including date filters"""
         filters = {}
         vn = self.filter_vehicle.get().strip()
         if vn:
@@ -840,9 +740,6 @@ class VehiclesPage:
         ph = self.filter_phone.get().strip()
         if ph:
             filters["phone"] = ph
-        on = self.filter_owner.get().strip()
-        if on:
-            filters["owner_name"] = on
 
         status = self.filter_status.get()
         if status == "Active":
@@ -856,20 +753,15 @@ class VehiclesPage:
         if call_status and call_status != "All":
             filters["call_status"] = call_status
 
-        # ✅ Date filters
         if self.filter_date_from_value:
-            filters["expiry_from"] = \
-                self.filter_date_from_value.strftime("%Y-%m-%d")
+            filters["expiry_from"] = self.filter_date_from_value.strftime("%Y-%m-%d")
         if self.filter_date_to_value:
-            filters["expiry_to"] = \
-                self.filter_date_to_value.strftime("%Y-%m-%d")
+            filters["expiry_to"] = self.filter_date_to_value.strftime("%Y-%m-%d")
 
         if self.filter_updated_from_value:
-            filters["updated_from"] = \
-                self.filter_updated_from_value.strftime("%Y-%m-%d")
+            filters["updated_from"] = self.filter_updated_from_value.strftime("%Y-%m-%d")
         if self.filter_updated_to_value:
-            filters["updated_to"] = \
-                self.filter_updated_to_value.strftime("%Y-%m-%d")
+            filters["updated_to"] = self.filter_updated_to_value.strftime("%Y-%m-%d")
 
         return filters
 
@@ -895,17 +787,16 @@ class VehiclesPage:
                     status = "✅ Active"
                     tag = "active"
 
+            # Reordered tuple: id, vehicle_number, phone, updated_at, expiry_date, status, call_status, renewals
             self.tree.insert("", "end", values=(
                 v["id"],
                 v["vehicle_number"],
-                v.get("owner_name", ""),
                 v["phone"],
-                v.get("vehicle_type", ""),
+                v.get("updated_at", v.get("created_at", "")),
                 v["expiry_date"],
                 status,
                 v.get("call_status", "No response"),
-                v.get("renewal_count", 0),
-                v.get("updated_at", v.get("created_at", ""))
+                v.get("renewal_count", 0)
             ), tags=(tag,))
 
         self.tree.tag_configure("expired", background="#FEE2E2")
@@ -915,47 +806,34 @@ class VehiclesPage:
         count = len(vehicles)
         self.count_label.configure(text=f"Showing {count} vehicle(s)")
 
-        # Show active filter info
         active_filters = []
         if self.filter_date_from_value:
-            active_filters.append(
-                f"Expiry From: {self.filter_date_from_value.strftime('%Y-%m-%d')}")
+            active_filters.append(f"Expiry From: {self.filter_date_from_value.strftime('%Y-%m-%d')}")
         if self.filter_date_to_value:
-            active_filters.append(
-                f"Expiry To: {self.filter_date_to_value.strftime('%Y-%m-%d')}")
+            active_filters.append(f"Expiry To: {self.filter_date_to_value.strftime('%Y-%m-%d')}")
         if self.filter_updated_from_value:
-            active_filters.append(
-                f"Updated From: {self.filter_updated_from_value.strftime('%Y-%m-%d')}")
+            active_filters.append(f"Updated From: {self.filter_updated_from_value.strftime('%Y-%m-%d')}")
         if self.filter_updated_to_value:
-            active_filters.append(
-                f"Updated To: {self.filter_updated_to_value.strftime('%Y-%m-%d')}")
+            active_filters.append(f"Updated To: {self.filter_updated_to_value.strftime('%Y-%m-%d')}")
 
         if active_filters:
-            self.status_label.configure(
-                text=f"📅 Date filter: {' | '.join(active_filters)}")
+            self.status_label.configure(text=f"📅 Date filter: {' | '.join(active_filters)}")
         else:
             self.status_label.configure(text="Vehicles loaded successfully")
 
     def clear_filters(self):
-        """Clear ALL filters including dates"""
         self.filter_vehicle.delete(0, "end")
         self.filter_phone.delete(0, "end")
-        self.filter_owner.delete(0, "end")
         self.filter_status.set("All")
 
-        # ✅ Clear date filters
         self.filter_date_from_value = None
         self.filter_date_to_value = None
         self.filter_updated_from_value = None
         self.filter_updated_to_value = None
-        self.date_from_text.configure(
-            text="Any", fg=COLORS["text_secondary"])
-        self.date_to_text.configure(
-            text="Any", fg=COLORS["text_secondary"])
-        self.updated_from_text.configure(
-            text="Any", fg=COLORS["text_secondary"])
-        self.updated_to_text.configure(
-            text="Any", fg=COLORS["text_secondary"])
+        self.date_from_text.configure(text="Any", fg=COLORS["text_secondary"])
+        self.date_to_text.configure(text="Any", fg=COLORS["text_secondary"])
+        self.updated_from_text.configure(text="Any", fg=COLORS["text_secondary"])
+        self.updated_to_text.configure(text="Any", fg=COLORS["text_secondary"])
         self.date_from_clear.pack_forget()
         self.date_to_clear.pack_forget()
         self.updated_from_clear.pack_forget()
@@ -977,8 +855,7 @@ class VehiclesPage:
     def get_selected_vehicle(self):
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("Warning",
-                                   "Please select a vehicle first!")
+            messagebox.showwarning("Warning", "Please select a vehicle first!")
             return None
 
         item = self.tree.item(selection[0])
@@ -997,8 +874,7 @@ class VehiclesPage:
     def delete_selected(self):
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("Warning",
-                                   "Please select vehicle(s) to delete!")
+            messagebox.showwarning("Warning", "Please select vehicle(s) to delete!")
             return
 
         count = len(selection)
@@ -1010,15 +886,12 @@ class VehiclesPage:
                 delete_vehicle(values[0])
 
             self.load_vehicles()
-            messagebox.showinfo("Success",
-                                f"{count} vehicle(s) deleted successfully!")
+            messagebox.showinfo("Success", f"{count} vehicle(s) deleted successfully!")
 
     def send_whatsapp_selected(self):
-        """Send WhatsApp message to selected vehicle"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("Warning",
-                                   "Please select vehicle(s) to send message!")
+            messagebox.showwarning("Warning", "Please select vehicle(s) to send message!")
             return
 
         count = 0
@@ -1045,7 +918,6 @@ class VehiclesPage:
             "Please click Send in WhatsApp for each message.")
 
     def share_search_results_whatsapp(self):
-        """Share the current search results (vehicle + phone) via WhatsApp."""
         filters = self.get_filters()
         vehicles = get_all_vehicles(filters)
 
@@ -1055,14 +927,12 @@ class VehiclesPage:
                 "No vehicles match the current filter. Please adjust filters and try again.")
             return
 
-        # Build message text
         lines = ["Vehicle List (Number - Phone):"]
         for v in vehicles:
             lines.append(f"{v['vehicle_number']} - {v['phone']}")
 
         body = "\n".join(lines)
 
-        # Ask for recipient phone number
         recipient = simpledialog.askstring(
             "Share via WhatsApp",
             "Enter recipient phone number (with country code):")
@@ -1072,20 +942,14 @@ class VehiclesPage:
 
         success = send_whatsapp_message(recipient, body, auto_send=False)
         if success:
-            messagebox.showinfo(
-                "WhatsApp",
-                "WhatsApp opened with the list. Please send the message.")
+            messagebox.showinfo("WhatsApp", "WhatsApp opened with the list. Please send the message.")
         else:
-            messagebox.showerror(
-                "WhatsApp",
-                "Could not open WhatsApp. Please ensure WhatsApp is installed and try again.")
+            messagebox.showerror("WhatsApp", "Could not open WhatsApp. Please ensure WhatsApp is installed and try again.")
 
     def set_selected_call_status(self, status):
-        """Update call status for selected vehicle(s)."""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("Warning",
-                                   "Please select vehicle(s) to update!")
+            messagebox.showwarning("Warning", "Please select vehicle(s) to update!")
             return
 
         for item in selection:
@@ -1108,8 +972,7 @@ class VehiclesPage:
         if vehicle:
             self.parent.clipboard_clear()
             self.parent.clipboard_append(vehicle["vehicle_number"])
-            self.status_label.configure(
-                text=f"Copied: {vehicle['vehicle_number']}")
+            self.status_label.configure(text=f"Copied: {vehicle['vehicle_number']}")
 
     def export_csv(self):
         filepath = filedialog.asksaveasfilename(
@@ -1119,8 +982,7 @@ class VehiclesPage:
         if filepath:
             filters = self.get_filters()
             count = export_to_csv(filepath, filters)
-            messagebox.showinfo("Export",
-                                f"Exported {count} vehicles to CSV!")
+            messagebox.showinfo("Export", f"Exported {count} vehicles to CSV!")
 
     def export_pdf(self):
         filepath = filedialog.asksaveasfilename(
@@ -1131,8 +993,7 @@ class VehiclesPage:
             try:
                 filters = self.get_filters()
                 count = export_to_pdf(filepath, filters)
-                messagebox.showinfo("Export",
-                                    f"Exported {count} vehicles to PDF!")
+                messagebox.showinfo("Export", f"Exported {count} vehicles to PDF!")
             except ImportError:
                 messagebox.showerror(
                     "Missing Library",
@@ -1175,5 +1036,4 @@ class VehiclesPage:
             initialfile="sample_vehicles.csv")
         if filepath:
             generate_sample_csv(filepath)
-            messagebox.showinfo("Sample CSV",
-                                f"Sample CSV saved to:\n{filepath}")
+            messagebox.showinfo("Sample CSV", f"Sample CSV saved to:\n{filepath}")

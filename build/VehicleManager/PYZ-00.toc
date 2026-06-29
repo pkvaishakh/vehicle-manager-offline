@@ -1,5 +1,4 @@
-('C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
- 'Copy\\build\\VehicleManager\\PYZ-00.pyz',
+('C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\build\\VehicleManager\\PYZ-00.pyz',
  [('PIL',
    'c:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\.venv\\Lib\\site-packages\\PIL\\__init__.py',
    'PYMODULE'),
@@ -273,8 +272,7 @@
    'C:\\Program Files\\Python312\\Lib\\_threading_local.py',
    'PYMODULE'),
   ('app',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\app.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\app.py',
    'PYMODULE'),
   ('argparse', 'C:\\Program Files\\Python312\\Lib\\argparse.py', 'PYMODULE'),
   ('ast', 'C:\\Program Files\\Python312\\Lib\\ast.py', 'PYMODULE'),
@@ -413,8 +411,7 @@
   ('bz2', 'C:\\Program Files\\Python312\\Lib\\bz2.py', 'PYMODULE'),
   ('calendar', 'C:\\Program Files\\Python312\\Lib\\calendar.py', 'PYMODULE'),
   ('center_information',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\center_information.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\center_information.py',
    'PYMODULE'),
   ('charset_normalizer',
    'c:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\.venv\\Lib\\site-packages\\charset_normalizer\\__init__.py',
@@ -495,8 +492,7 @@
    'C:\\Program Files\\Python312\\Lib\\ctypes\\wintypes.py',
    'PYMODULE'),
   ('database',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\database.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\database.py',
    'PYMODULE'),
   ('dataclasses',
    'C:\\Program Files\\Python312\\Lib\\dataclasses.py',
@@ -594,8 +590,7 @@
    'C:\\Program Files\\Python312\\Lib\\http\\server.py',
    'PYMODULE'),
   ('import_export',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\import_export.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\import_export.py',
    'PYMODULE'),
   ('importlib',
    'C:\\Program Files\\Python312\\Lib\\importlib\\__init__.py',
@@ -759,28 +754,22 @@
   ('numbers', 'C:\\Program Files\\Python312\\Lib\\numbers.py', 'PYMODULE'),
   ('opcode', 'C:\\Program Files\\Python312\\Lib\\opcode.py', 'PYMODULE'),
   ('pages',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\__init__.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\__init__.py',
    'PYMODULE'),
   ('pages.add_vehicle',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\add_vehicle.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\add_vehicle.py',
    'PYMODULE'),
   ('pages.dashboard',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\dashboard.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\dashboard.py',
    'PYMODULE'),
   ('pages.sms',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\sms.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\sms.py',
    'PYMODULE'),
   ('pages.vehicles',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\vehicles.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\vehicles.py',
    'PYMODULE'),
   ('pages.whatsapp',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\pages\\whatsapp.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\pages\\whatsapp.py',
    'PYMODULE'),
   ('pathlib', 'C:\\Program Files\\Python312\\Lib\\pathlib.py', 'PYMODULE'),
   ('pdb', 'C:\\Program Files\\Python312\\Lib\\pdb.py', 'PYMODULE'),
@@ -1138,8 +1127,7 @@
   ('shutil', 'C:\\Program Files\\Python312\\Lib\\shutil.py', 'PYMODULE'),
   ('signal', 'C:\\Program Files\\Python312\\Lib\\signal.py', 'PYMODULE'),
   ('sms_sender',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\sms_sender.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\sms_sender.py',
    'PYMODULE'),
   ('socket', 'C:\\Program Files\\Python312\\Lib\\socket.py', 'PYMODULE'),
   ('socketserver',
@@ -1166,8 +1154,7 @@
    'C:\\Program Files\\Python312\\Lib\\stringprep.py',
    'PYMODULE'),
   ('styles',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\styles.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\styles.py',
    'PYMODULE'),
   ('subprocess',
    'C:\\Program Files\\Python312\\Lib\\subprocess.py',
@@ -1278,8 +1265,7 @@
    'C:\\Program Files\\Python312\\Lib\\webbrowser.py',
    'PYMODULE'),
   ('whatsapp_sender',
-   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution - '
-   'Copy\\whatsapp_sender.py',
+   'C:\\Users\\vaish\\OneDrive\\Desktop\\python-vehicle-polution\\whatsapp_sender.py',
    'PYMODULE'),
   ('xml', 'C:\\Program Files\\Python312\\Lib\\xml\\__init__.py', 'PYMODULE'),
   ('xml.dom',
