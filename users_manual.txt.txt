@@ -26,6 +26,23 @@ REQUIREMENTS:
   - WhatsApp Desktop (for auto-send)
   - No Python installation needed!
 
+SMS REMINDER:
+  1. Click: SMS
+  2. Enter the local SMS gateway URL from the SMSGate app
+  3. Optionally enter username and password
+  4. Use the message template or leave blank for defaults
+  5. Set the expiry date range using the From/To fields
+  6. Use the quick filter buttons on the new row below the dates
+  7. Preview the message, then click Start Bulk SMS
+
+WHATSAPP BULK SEND:
+  1. Click: WhatsApp
+  2. Make sure WhatsApp Desktop is installed for auto-send
+  3. Set the expiry date range using the From/To fields
+  4. Use the quick filter buttons on the new row below the dates
+  5. Set delay between messages before starting
+  6. Click Start Bulk Send to send reminders
+
 ========================================
 
 

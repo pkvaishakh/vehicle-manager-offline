@@ -1,19 +1,27 @@
-
 """
-WhatsApp message sender module - IMPROVED VERSION
-With robust auto-send that waits for message to fully load
+WhatsApp message sender module - OPTIMIZED VERSION
+High-performance bulk messaging with intelligent session management
 """
 import urllib.parse
-import webbrowser
-import subprocess
 import time
 import threading
 import os
-import sys
-import platform
 from datetime import datetime
+from typing import Dict, List, Optional, Callable
+from dataclasses import dataclass
+from enum import Enum
 
-# Try import center_information
+# PyAutoGUI Configuration
+try:
+    import pyautogui
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.3  # Reduced from 0.5
+    HAS_AUTOGUI = True
+except ImportError:
+    pyautogui = None
+    HAS_AUTOGUI = False
+
+# Import center_information safely
 try:
     from center_information import center_information
 except ImportError:
@@ -21,670 +29,617 @@ except ImportError:
         "name": "Vehicle Pollution Testing Center",
         "address": "",
         "phone": "",
-        "google_maps": ""
+        "google_maps": "",
+        "working_hours": ""
     }
 
-# Try import pyautogui for auto-send
-try:
-    import pyautogui
-    pyautogui.FAILSAFE = True
-    pyautogui.PAUSE = 0.5
-    HAS_AUTOGUI = True
-except ImportError:
-    HAS_AUTOGUI = False
-    print("⚠️ pyautogui not installed. Auto-send disabled.")
-    print("   Install with: pip install pyautogui")
+
+# ============================================================================
+# ENUMS & DATA CLASSES
+# ============================================================================
+
+class SendProfile(Enum):
+    """Send profile types"""
+    FAST = "fast"
+    STANDARD = "standard"
+    SLOW_PC = "slow_pc"
+    MAX_RELIABILITY = "max_reliability"
 
 
-def find_whatsapp_exe():
-    """Find WhatsApp Desktop executable on the PC"""
-    possible_paths = []
+@dataclass
+class ProfileConfig:
+    """Configuration for send profiles"""
+    initial_wait: int
+    enter_retries: int
+    retry_base_wait: int
+    message_buffer: int
+    launch_gap: int
+    post_send_settle: int
 
-    if platform.system() == "Windows":
-        local_app = os.environ.get("LOCALAPPDATA", "")
-        if local_app:
-            whatsapp_dir = os.path.join(local_app, "WhatsApp")
-            if os.path.exists(whatsapp_dir):
-                for root, dirs, files in os.walk(whatsapp_dir):
-                    for f in files:
-                        if f.lower() == "whatsapp.exe":
-                            possible_paths.append(os.path.join(root, f))
 
-        prog_dirs = [
-            os.environ.get("PROGRAMFILES", "C:\\Program Files"),
-            os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs"),
+@dataclass
+class SendResult:
+    """Result of a message send operation"""
+    success: bool
+    message: str
+    timestamp: float = None
+    
+    def __post_init__(self):
+        if self.timestamp is None:
+            self.timestamp = time.time()
+
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+SEND_PROFILES: Dict[SendProfile, ProfileConfig] = {
+    SendProfile.FAST: ProfileConfig(
+        initial_wait=8,
+        enter_retries=2,
+        retry_base_wait=1,
+        message_buffer=3,
+        launch_gap=2,
+        post_send_settle=2
+    ),
+    SendProfile.STANDARD: ProfileConfig(
+        initial_wait=12,
+        enter_retries=3,
+        retry_base_wait=2,
+        message_buffer=5,
+        launch_gap=4,
+        post_send_settle=3
+    ),
+    SendProfile.SLOW_PC: ProfileConfig(
+        initial_wait=18,
+        enter_retries=4,
+        retry_base_wait=3,
+        message_buffer=8,
+        launch_gap=6,
+        post_send_settle=4
+    ),
+    SendProfile.MAX_RELIABILITY: ProfileConfig(
+        initial_wait=25,
+        enter_retries=5,
+        retry_base_wait=4,
+        message_buffer=10,
+        launch_gap=8,
+        post_send_settle=5
+    )
+}
+
+
+# ============================================================================
+# SESSION MANAGER
+# ============================================================================
+
+class WhatsAppSessionManager:
+    """Manages WhatsApp session state with thread safety"""
+    
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self):
+        if self._initialized:
+            return
+        
+        self._session_active = False
+        self._last_launch = 0.0
+        self._exe_path = None
+        self._initialized = True
+    
+    @property
+    def is_active(self) -> bool:
+        with self._lock:
+            return self._session_active
+    
+    def activate(self):
+        with self._lock:
+            self._session_active = True
+    
+    def deactivate(self):
+        with self._lock:
+            self._session_active = False
+    
+    def wait_for_launch_gap(self, min_gap: float = 4.0):
+        """Wait until safe to launch"""
+        with self._lock:
+            now = time.time()
+            elapsed = now - self._last_launch
+            if elapsed < min_gap:
+                time.sleep(min_gap - elapsed)
+            self._last_launch = time.time()
+    
+    def get_exe_path(self) -> Optional[str]:
+        """Get cached WhatsApp executable path"""
+        if self._exe_path is None:
+            self._exe_path = self._find_whatsapp_exe()
+        return self._exe_path
+    
+    @staticmethod
+    def _find_whatsapp_exe() -> Optional[str]:
+        """Find WhatsApp Desktop executable on Windows"""
+        search_paths = [
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "WhatsApp"),
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "WhatsApp"),
+            os.path.join(os.environ.get("PROGRAMFILES", ""), "WhatsApp"),
+            os.path.join(os.environ.get("PROGRAMFILES(X86)", ""), "WhatsApp"),
         ]
 
-        for prog_dir in prog_dirs:
-            if prog_dir:
-                wp_path = os.path.join(prog_dir, "WhatsApp", "WhatsApp.exe")
-                if os.path.exists(wp_path):
-                    possible_paths.append(wp_path)
-
-        user_profile = os.environ.get("USERPROFILE", "")
-        if user_profile:
-            extra_paths = [
-                os.path.join(user_profile, "AppData", "Local", "WhatsApp", "WhatsApp.exe"),
-                os.path.join(user_profile, "AppData", "Local", "Programs", "WhatsApp", "WhatsApp.exe"),
-            ]
-            for p in extra_paths:
-                if os.path.exists(p):
-                    possible_paths.append(p)
-
-        try:
-            result = subprocess.run(["where", "WhatsApp"], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                for line in result.stdout.strip().split("\n"):
-                    if line.strip():
-                        possible_paths.append(line.strip())
-        except Exception:
-            pass
-
-    elif platform.system() == "Darwin":
-        mac_paths = [
-            "/Applications/WhatsApp.app",
-            os.path.expanduser("~/Applications/WhatsApp.app"),
-        ]
-        for p in mac_paths:
-            if os.path.exists(p):
-                possible_paths.append(p)
-
-    elif platform.system() == "Linux":
-        try:
-            result = subprocess.run(["which", "whatsapp-nativefier"], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                possible_paths.append(result.stdout.strip())
-        except Exception:
-            pass
-
-        linux_paths = [
-            "/snap/bin/whatsapp-for-linux",
-            "/usr/bin/whatsapp-for-linux",
-        ]
-        for p in linux_paths:
-            if os.path.exists(p):
-                possible_paths.append(p)
-
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
-
-    # Attempt to find Microsoft Store (WindowsApps) install of WhatsApp
-    if platform.system() == "Windows":
-        windows_apps_paths = [
-            os.path.join(os.environ.get("ProgramFiles", "C:\\Program Files"), "WindowsApps"),
-            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Microsoft", "WindowsApps"),
-        ]
-        for base in windows_apps_paths:
-            if not base or not os.path.isdir(base):
+        for base_path in search_paths:
+            if not base_path or not os.path.exists(base_path):
                 continue
+
+            exe_direct = os.path.join(base_path, "WhatsApp.exe")
+            if os.path.exists(exe_direct):
+                return exe_direct
+
             try:
-                for root, dirs, files in os.walk(base):
-                    for f in files:
-                        if f.lower().startswith("whatsapp") and f.lower().endswith(".exe"):
-                            candidate = os.path.join(root, f)
-                            if os.path.exists(candidate):
-                                return candidate
-            except PermissionError:
+                for root, _, files in os.walk(base_path):
+                    if root.count(os.sep) - base_path.count(os.sep) > 2:
+                        continue
+                    if "WhatsApp.exe" in files:
+                        return os.path.join(root, "WhatsApp.exe")
+            except (PermissionError, OSError):
                 continue
+
+        return None
+
+
+# Global session manager instance
+session_manager = WhatsAppSessionManager()
+
+    
+# ============================================================================
+# MESSAGE FORMATTING
+# ============================================================================
+
+class MessageFormatter:
+    """Formats WhatsApp messages"""
+    
+    @staticmethod
+    def format_message(vehicle_number: str, owner_name: str, 
+                      expiry_date: str, custom_message: Optional[str] = None) -> str:
+        """Format reminder message"""
+        if custom_message:
+            msg = custom_message
+            msg = msg.replace("{vehicle_number}", vehicle_number)
+            msg = msg.replace("{owner_name}", owner_name or "Sir/Madam")
+            msg = msg.replace("{expiry_date}", expiry_date)
+            return msg
+        
+        name = owner_name or "Sir/Madam"
+        
+        # Format date
+        try:
+            exp_date = datetime.strptime(expiry_date, "%Y-%m-%d")
+            formatted_date = exp_date.strftime("%d-%b-%Y")
+        except ValueError:
+            formatted_date = expiry_date
+        
+        # Calculate status
+        today = datetime.now().date()
+        try:
+            exp = datetime.strptime(expiry_date, "%Y-%m-%d").date()
+            if exp < today:
+                status = f"{formatted_date} ന് അവസാനിച്ചിരിക്കുന്നു"
+            else:
+                days_left = (exp - today).days
+                if days_left == 0:
+                    status = f"ഇന്ന് അവസാനിക്കുന്നു (*{formatted_date}*)"
+                elif days_left <= 7:
+                    status = f"*{days_left}* ദിവസത്തിനുള്ളിൽ അവസാനിക്കുന്നതാണ് (*{formatted_date}*)"
+                else:
+                    status = f"*{formatted_date}* ന് അവസാനിക്കുന്നു"
+        except ValueError:
+            status = f"Expiry: *{formatted_date}*"
+        
+        return (
+            f"🚗 *വാഹനപുകപരിശോധനകേന്ദ്രത്തിൽ നിന്നുള്ള അറിയിപ്പ്...*\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Dear *{name}*,\n\n"
+            f"താങ്കളുടെ *{vehicle_number}* വാഹനത്തിന്റെ "
+            f"വാഹനപുക സർട്ടിഫിക്കറ്റ് കാലാവധി {status}.\n\n"
+            f"സർക്കാർ അധികാരികളിൽ നിന്നുള്ള നിയമപരമായ "
+            f"ശിക്ഷാനടപടികൾ/പിഴ ഒഴിവാക്കുന്നതിനായി, "
+            f"കാലാവധി തീരുന്നതിന് മുൻപായി ഞങ്ങളുടെ "
+            f"വാഹനപുകപരിശോധനാകേന്ദ്രത്തിൽ നിന്നും "
+            f"സർട്ടിഫിക്കറ്റ് പുതുക്കുക.\n\n"
+            f"*{center_information.get('name', '')}*\n"
+            f"അഡ്രസ്സ്: {center_information.get('address', '')}\n"
+            f"ഫോൺ: {center_information.get('phone', '')}\n"
+            f"ലൊക്കേഷൻ: {center_information.get('google_maps', '')}\n"
+            f"{center_information.get('working_hours', '')}\n"
+        )
+    
+    @staticmethod
+    def clean_phone_number(phone: str) -> str:
+        """Clean and format phone number"""
+        phone = str(phone).strip()
+        
+        # Remove common separators
+        for char in [" ", "-", "(", ")", "."]:
+            phone = phone.replace(char, "")
+        
+        # Remove + prefix
+        if phone.startswith("+"):
+            phone = phone[1:]
+        
+        # Add country code for Indian numbers
+        if len(phone) == 10 and phone.isdigit():
+            phone = "91" + phone
+        
+        return phone
+
+
+# ============================================================================
+# MESSAGE SENDER
+# ============================================================================
+
+class WhatsAppSender:
+    """Handles WhatsApp message sending"""
+    
+    def __init__(self, profile: SendProfile = SendProfile.STANDARD):
+        self.profile = SEND_PROFILES[profile]
+        self.formatter = MessageFormatter()
+    
+    def ensure_session_active(self) -> bool:
+        """Ensure a WhatsApp Desktop session is active on Windows"""
+        if not HAS_AUTOGUI:
+            return False
+        
+        if session_manager.is_active:
+            return True
+        
+        session_manager.wait_for_launch_gap(self.profile.launch_gap)
+        
+        protocol_url = "whatsapp://send?phone=1&text="
+        
+        try:
+            os.startfile(protocol_url)
+        except Exception as e:
+            print(f"Failed to open WhatsApp: {e}")
+            return False
+        
+        time.sleep(2)
+        
+        session_manager.activate()
+        return True
+    
+    def open_chat(self, phone: str, message: str) -> bool:
+        """Open chat window with a pre-filled message"""
+        phone_clean = self.formatter.clean_phone_number(phone)
+        encoded_message = urllib.parse.quote(message)
+        protocol_url = f"whatsapp://send?phone={phone_clean}&text={encoded_message}"
+        
+        session_manager.wait_for_launch_gap(self.profile.launch_gap)
+        
+        try:
+            os.startfile(protocol_url)
+        except Exception as e:
+            print(f"Failed to open chat: {e}")
+            return False
+        
+        time.sleep(0.2)
+        
+        return True
+    
+    def send_message_auto(self) -> bool:
+        """Send message using Enter key"""
+        if not HAS_AUTOGUI:
+            print("Auto-send not available (pyautogui not installed)")
+            return False
+        
+        for attempt in range(self.profile.enter_retries):
+            try:
+                pyautogui.press('space')
+                time.sleep(0.1)
+                pyautogui.press('enter')
+                time.sleep(self.profile.post_send_settle)
+                return True
+                
+            except Exception as e:
+                print(f"Send attempt {attempt + 1} failed: {e}")
+                if attempt < self.profile.enter_retries - 1:
+                    time.sleep(self.profile.retry_base_wait)
+                continue
+        
+        return False
+    
+    def send_single(self, phone: str,
+                    message: str,
+                    auto_send: bool = True,
+                    wait_time_override: Optional[int] = None) -> SendResult:
+        """Send a single message"""
+        try:
+            if auto_send and HAS_AUTOGUI:
+                if not self.ensure_session_active():
+                    return SendResult(False, "Could not activate WhatsApp session")
+                
+                if not self.open_chat(phone, message):
+                    return SendResult(False, "Could not open chat")
+                
+                wait_time = self.profile.initial_wait
+                if wait_time_override is not None:
+                    try:
+                        wait_time = max(wait_time, int(wait_time_override))
+                    except (TypeError, ValueError):
+                        wait_time = self.profile.initial_wait
+
+                time.sleep(wait_time)
+                
+                if self.send_message_auto():
+                    return SendResult(True, "Message sent successfully")
+                else:
+                    return SendResult(True, "Opened (manual send needed)")
+            
+            else:
+                # Manual send mode
+                if self.open_chat(phone, message):
+                    return SendResult(True, "Opened for manual send")
+                else:
+                    return SendResult(False, "Could not open WhatsApp")
+                    
+        except Exception as e:
+            return SendResult(False, f"Error: {str(e)}")
+
+
+# ============================================================================
+# BULK SENDER
+# ============================================================================
+
+class BulkMessageSender:
+    """Handles bulk message sending with optimization"""
+    
+    def __init__(self, profile: SendProfile = SendProfile.STANDARD):
+        self.sender = WhatsAppSender(profile)
+        self.profile = SEND_PROFILES[profile]
+        self.formatter = MessageFormatter()
+        self._stop_requested = False
+    
+    def stop(self):
+        """Request bulk send to stop"""
+        self._stop_requested = True
+    
+    def send_bulk(self, 
+                  vehicles: List[Dict],
+                  custom_message: Optional[str] = None,
+                  delay: int = 20,
+                  auto_send: bool = True,
+                  wait_time: Optional[int] = None,
+                  progress_callback: Optional[Callable] = None) -> Dict:
+        """
+        Send messages to multiple vehicles
+        
+        Returns:
+            Dict with 'success_count', 'failed_count', 'results'
+        """
+        total = len(vehicles)
+        success_count = 0
+        failed_count = 0
+        results = []
+        
+        print(f"\n{'='*60}")
+        print(f"Starting Bulk Send: {total} messages")
+        print(f"Profile: {self.sender.profile}")
+        print(f"Auto-send: {auto_send}")
+        print(f"{'='*60}\n")
+        
+        for i, vehicle in enumerate(vehicles):
+            if self._stop_requested:
+                print("\n⚠️ Bulk send stopped by user")
+                break
+            
+            # Format message
+            msg = self.formatter.format_message(
+                vehicle["vehicle_number"],
+                vehicle.get("owner_name", ""),
+                vehicle["expiry_date"],
+                custom_message
+            )
+            
+            # Send message
+            result = self.sender.send_single(
+                vehicle["phone"],
+                msg,
+                auto_send=auto_send,
+                wait_time_override=wait_time
+            )
+            
+            # Update counters
+            if result.success:
+                success_count += 1
+                print(f"✅ [{i+1}/{total}] {vehicle['vehicle_number']}: {result.message}")
+                
+                # Log to database
+                try:
+                    from database import log_message
+                    log_message(
+                        vehicle["id"],
+                        vehicle["vehicle_number"],
+                        vehicle["phone"],
+                        msg
+                    )
+                except Exception as e:
+                    print(f"   Warning: Could not log to database: {e}")
+            else:
+                failed_count += 1
+                print(f"❌ [{i+1}/{total}] {vehicle['vehicle_number']}: {result.message}")
+            
+            results.append({
+                "vehicle": vehicle,
+                "result": result
+            })
+            
+            # Progress callback
+            if progress_callback:
+                try:
+                    progress_callback(
+                        i + 1, total, success_count, failed_count,
+                        vehicle["vehicle_number"]
+                    )
+                except Exception as e:
+                    print(f"Progress callback error: {e}")
+            
+            # Wait between messages
+            if i < total - 1 and not self._stop_requested:
+                wait_time = max(delay, self.profile.initial_wait + self.profile.message_buffer)
+                print(f"   ⏳ Waiting {wait_time}s before next message...\n")
+                time.sleep(wait_time)
+        
+        # Deactivate session
+        session_manager.deactivate()
+        
+        # Final summary
+        print(f"\n{'='*60}")
+        print(f"Bulk Send Complete")
+        print(f"Success: {success_count}/{total}")
+        print(f"Failed: {failed_count}/{total}")
+        print(f"{'='*60}\n")
+        
+        if progress_callback:
+            try:
+                progress_callback(total, total, success_count, failed_count, "DONE")
             except Exception:
-                continue
+                pass
+        
+        return {
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "results": results
+        }
 
-    return None
 
+# ============================================================================
+# PUBLIC API FUNCTIONS
+# ============================================================================
 
-def is_whatsapp_installed():
-    """Check if WhatsApp Desktop is installed"""
-    return find_whatsapp_exe() is not None
-
-
-def get_whatsapp_status():
-    """Get detailed WhatsApp installation status"""
-    exe_path = find_whatsapp_exe()
+def get_whatsapp_status() -> Dict:
+    """Get WhatsApp installation and capability status"""
+    exe_path = session_manager.get_exe_path()
+    
     status = {
         "installed": exe_path is not None,
         "path": exe_path,
         "auto_send": HAS_AUTOGUI,
         "method": "desktop" if exe_path else "protocol",
     }
-
+    
     if exe_path and HAS_AUTOGUI:
         status["message"] = (
             f"✅ WhatsApp Desktop FOUND\n"
-            f"✅ Auto-Send ENABLED (pyautogui installed)\n"
-            f"Path: {exe_path}")
+            f"✅ Auto-Send ENABLED\n"
+            f"Path: {exe_path}"
+        )
     elif exe_path:
         status["message"] = (
             f"✅ WhatsApp Desktop FOUND\n"
             f"⚠️ Auto-Send DISABLED (install pyautogui)\n"
-            f"Path: {exe_path}")
-    elif HAS_AUTOGUI:
-        status["message"] = (
-            f"⚠️ WhatsApp Desktop NOT FOUND\n"
-            f"✅ pyautogui installed\n"
-            f"Will use whatsapp:// protocol")
+            f"Path: {exe_path}"
+        )
     else:
         status["message"] = (
             f"⚠️ WhatsApp Desktop NOT FOUND\n"
-            f"⚠️ Auto-Send DISABLED\n"
-            f"Install: pip install pyautogui")
-
+            f"{'✅' if HAS_AUTOGUI else '⚠️'} pyautogui {'installed' if HAS_AUTOGUI else 'not installed'}"
+        )
+    
     return status
 
 
-def format_message(vehicle_number, owner_name, expiry_date, custom_message=None):
-    """Format a reminder message"""
-    if custom_message:
-        msg = custom_message
-        msg = msg.replace("{vehicle_number}", vehicle_number)
-        msg = msg.replace("{owner_name}", owner_name if owner_name else "Sir/Madam")
-        msg = msg.replace("{expiry_date}", expiry_date)
-        return msg
+def is_whatsapp_installed() -> bool:
+    """Check if WhatsApp Desktop is installed"""
+    return session_manager.get_exe_path() is not None
 
-    name = owner_name if owner_name else "Sir/Madam"
 
+def send_whatsapp_message(phone: str,
+                          message: str,
+                          method: str = "auto",
+                          auto_send: bool = True,
+                          wait_time: int = 12,
+                          send_profile: str = "standard",
+                          exe_path: Optional[str] = None,
+                          callback: Optional[Callable] = None) -> bool:
+    """Send a single WhatsApp message"""
     try:
-        exp_date = datetime.strptime(expiry_date, "%Y-%m-%d")
-        formatted_date = exp_date.strftime("%d-%b-%Y")
+        profile = SendProfile(send_profile)
     except ValueError:
-        formatted_date = expiry_date
+        profile = SendProfile.STANDARD
+    
+    _ = method, exe_path
 
-    today = datetime.now().date()
-    try:
-        exp = datetime.strptime(expiry_date, "%Y-%m-%d").date()
-        if exp < today:
-            status = f"{formatted_date} ന് അവസാനിച്ചിരിക്കുന്നു"
-        else:
-            days_left = (exp - today).days
-            if days_left == 0:
-                status = f"ഇന്ന് അവസാനിക്കുന്നു (*{formatted_date}*)"
-            elif days_left <= 7:
-                status = f"*{days_left}* ദിവസത്തിനുള്ളിൽ അവസാനിക്കുന്നതാണ് (*{formatted_date}*)"
-            else:
-                status = f"*{formatted_date}* ന് അവസാനിക്കുന്നു"
-    except ValueError:
-        status = f"Expiry: *{formatted_date}*"
-
-    message = (
-        f"🚗 *വാഹനപുകപരിശോധനകേന്ദ്രത്തിൽ നിന്നുള്ള അറിയിപ്പ്...*\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"Dear *{name}*,\n\n"
-        f"താങ്കളുടെ *{vehicle_number}* വാഹനത്തിന്റെ "
-        f"വാഹനപുക സർട്ടിഫിക്കറ്റ് കാലാവധി {status}.\n\n"
-        f"സർക്കാർ അധികാരികളിൽ നിന്നുള്ള നിയമപരമായ "
-        f"ശിക്ഷാനടപടികൾ/പിഴ ഒഴിവാക്കുന്നതിനായി, "
-        f"കാലാവധി തീരുന്നതിന് മുൻപായി ഞങ്ങളുടെ "
-        f"വാഹനപുകപരിശോധനാകേന്ദ്രത്തിൽ നിന്നും "
-        f"സർട്ടിഫിക്കറ്റ് പുതുക്കുക.\n\n"
-        f"*{center_information.get('name', '')}*\n"
-        f"അഡ്രസ്സ്: {center_information.get('address', '')}\n"
-        f"ഫോൺ: {center_information.get('phone', '')}\n"
-        f"ലൊക്കേഷൻ : {center_information.get('google_maps', '')}\n"
-        f"{center_information.get('working_hours', '')}\n"
+    sender = WhatsAppSender(profile)
+    result = sender.send_single(
+        phone,
+        message,
+        auto_send,
+        wait_time_override=wait_time
     )
     
-    return message
-
-
-def clean_phone_number(phone):
-    """Clean and format phone number"""
-    phone = str(phone).strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
-
-    if phone.startswith("+"):
-        phone = phone[1:]
-
-    if len(phone) == 10 and phone.isdigit():
-        phone = "91" + phone
-
-    return phone
-
-
-def bring_window_to_front(window_title_keyword="whatsapp"):
-    """
-    Bring WhatsApp window to foreground using Windows API
-    Returns True if successful
-    """
-    if platform.system() != "Windows":
-        return True
-    
-    try:
-        import ctypes
-        from ctypes import wintypes
-        
-        EnumWindows = ctypes.windll.user32.EnumWindows
-        EnumWindowsProc = ctypes.WINFUNCTYPE(
-            ctypes.c_bool,
-            ctypes.POINTER(ctypes.c_int),
-            ctypes.POINTER(ctypes.c_int)
-        )
-        GetWindowText = ctypes.windll.user32.GetWindowTextW
-        GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
-        SetForegroundWindow = ctypes.windll.user32.SetForegroundWindow
-        ShowWindow = ctypes.windll.user32.ShowWindow
-        IsIconic = ctypes.windll.user32.IsIconic
-        SW_RESTORE = 9
-        
-        found_window = None
-        
-        def callback(hwnd, lParam):
-            nonlocal found_window
-            length = GetWindowTextLength(hwnd)
-            if length > 0:
-                buff = ctypes.create_unicode_buffer(length + 1)
-                GetWindowText(hwnd, buff, length + 1)
-                title = buff.value.lower()
-                if window_title_keyword.lower() in title:
-                    found_window = hwnd
-                    return False  # Stop enumeration
-            return True
-        
-        EnumWindows(EnumWindowsProc(callback), 0)
-        
-        if found_window:
-            # If minimized, restore it
-            if IsIconic(found_window):
-                ShowWindow(found_window, SW_RESTORE)
-            # Bring to front and set focus
-            SetForegroundWindow(found_window)
-            time.sleep(0.5)  # Give time for window to come to front
-            return True
-    except Exception as e:
-        print(f"bring_window_to_front error: {e}")
-    
-    return False
-
-
-def wait_for_whatsapp_ready(timeout=20):
-    """
-    Wait for WhatsApp window to be ready with IMPROVED detection
-    Returns True if ready, False if timeout
-    """
-    if not HAS_AUTOGUI:
-        return False
-
-    start_time = time.time()
-    check_interval = 0.5
-
-    while time.time() - start_time < timeout:
-        try:
-            if platform.system() == "Windows":
-                import ctypes
-                hwnd = ctypes.windll.user32.GetForegroundWindow()
-                length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
-                buff = ctypes.create_unicode_buffer(length + 1)
-                ctypes.windll.user32.GetWindowTextW(hwnd, buff, length + 1)
-                window_title = buff.value.lower()
-
-                if "whatsapp" in window_title:
-                    # Additional check: make sure it's not loading
-                    time.sleep(1)  # Extra wait for stability
-                    return True
-            else:
-                time.sleep(2)
-                return True
-
-        except Exception:
-            pass
-
-        time.sleep(check_interval)
-
-    return True  # Assume ready anyway after timeout
-
-
-def smart_press_enter_with_retry(max_retries=3, base_wait=3):
-    """
-    Smart Enter press with multiple detection methods and retries
-    Ensures message is fully loaded before sending
-    """
-    if not HAS_AUTOGUI:
-        return False
-    
-    for attempt in range(max_retries):
-        try:
-            # Bring WhatsApp window to front first
-            bring_window_to_front("whatsapp")
-            
-            # Wait for message field to be ready (varies by attempt)
-            wait_duration = base_wait + (attempt * 2)
-            time.sleep(wait_duration)
-            
-            # Method 1: Direct Enter press
-            pyautogui.press('enter')
-            time.sleep(0.3)
-            
-            # Method 2: Ctrl+Enter (alternative send method)
-            pyautogui.hotkey('ctrl', 'enter')
-            time.sleep(0.3)
-            
-            # Method 3: Final Enter press to ensure send
-            pyautogui.press('enter')
-            
-            # Wait to confirm send
-            time.sleep(1.5)
-            
-            return True
-            
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2)
-            continue
-    
-    return False
-
-
-def open_whatsapp_with_message(phone, message):
-    """
-    Open WhatsApp with pre-filled message using multiple methods
-    Returns True if opened successfully
-    """
-    phone = clean_phone_number(phone)
-    encoded_message = urllib.parse.quote(message)
-    
-    # Try multiple opening methods
-    opened = False
-    
-    # Method 1: whatsapp:// protocol (preferred)
-    protocol_url = f"whatsapp://send?phone={phone}&text={encoded_message}"
-    try:
-        if platform.system() == "Windows":
-            os.startfile(protocol_url)
-            opened = True
-        elif platform.system() == "Darwin":
-            subprocess.Popen(["open", protocol_url])
-            opened = True
-        elif platform.system() == "Linux":
-            subprocess.Popen(["xdg-open", protocol_url])
-            opened = True
-    except Exception:
-        pass
-    
-    # Method 2: Fallback to wa.me web link
-    if not opened:
-        try:
-            web_url = f"https://wa.me/{phone}?text={encoded_message}"
-            webbrowser.open(web_url)
-            opened = True
-        except Exception:
-            pass
-    
-    # Method 3: Use WhatsApp Desktop directly if found
-    if not opened:
-        exe_path = find_whatsapp_exe()
-        if exe_path and os.path.exists(exe_path):
-            try:
-                web_url = f"https://wa.me/{phone}?text={encoded_message}"
-                subprocess.Popen([exe_path, web_url])
-                opened = True
-            except Exception:
-                pass
-    
-    return opened
-
-
-def send_and_auto_enter_robust(phone, message, wait_time=12, max_retries=3):
-    """
-    Robust auto-send that handles varying PC performance
-    Key improvements:
-    1. Longer initial wait time
-    2. Multiple send attempts
-    3. Window focus verification
-    4. Progressive wait times
-    """
-    if not HAS_AUTOGUI:
-        return False, "pyautogui not available"
-    
-    try:
-        # Step 1: Open WhatsApp with message
-        opened = open_whatsapp_with_message(phone, message)
-        if not opened:
-            return False, "Could not open WhatsApp"
-        
-        # Step 2: Wait for WhatsApp to fully load (increased wait time)
-        # Different PCs need different wait times
-        total_wait = max(wait_time, 15)  # Minimum 15 seconds
-        time.sleep(total_wait)
-        
-        # Step 3: Bring window to front and ensure focus
-        bring_window_to_front("whatsapp")
-        time.sleep(1)
-        
-        # Step 4: Try multiple send methods with retries
-        for attempt in range(max_retries):
-            try:
-                # Bring window to front each attempt
-                bring_window_to_front("whatsapp")
-                time.sleep(1)
-                
-                # Try sending
-                if smart_press_enter_with_retry(max_retries=2, base_wait=2):
-                    return True, f"Message sent successfully (attempt {attempt + 1})"
-                
-                # If failed, wait longer before retry
-                if attempt < max_retries - 1:
-                    time.sleep(3)
-                    
-            except Exception as e:
-                print(f"Send attempt {attempt + 1} error: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-        
-        return True, "Opened but send may need manual confirmation"
-        
-    except Exception as e:
-        return False, f"Error: {str(e)}"
-
-
-def send_and_auto_enter(phone, message, method="protocol", exe_path=None, wait_time=8):
-    """
-    Wrapper for backward compatibility
-    Calls the robust version
-    """
-    return send_and_auto_enter_robust(phone, message, wait_time=wait_time)
-
-
-def send_via_desktop_exe(phone, message, exe_path=None):
-    """Send using desktop exe"""
-    phone = clean_phone_number(phone)
-    encoded_message = urllib.parse.quote(message)
-
-    protocol_url = f"whatsapp://send?phone={phone}&text={encoded_message}"
-
-    try:
-        if platform.system() == "Windows":
-            os.startfile(protocol_url)
-            return True, "Opened via whatsapp:// protocol"
-        elif platform.system() == "Darwin":
-            subprocess.Popen(["open", protocol_url])
-            return True, "Opened via whatsapp:// protocol"
-        elif platform.system() == "Linux":
-            subprocess.Popen(["xdg-open", protocol_url])
-            return True, "Opened via whatsapp:// protocol"
-    except Exception:
-        pass
-
-    if exe_path and os.path.exists(exe_path):
-        try:
-            wa_url = f"https://api.whatsapp.com/send?phone={phone}&text={encoded_message}"
-            subprocess.Popen([exe_path, wa_url])
-            return True, f"Opened via exe: {exe_path}"
-        except Exception as e:
-            return False, f"Exe launch failed: {str(e)}"
-
-    return False, "No method available"
-
-
-def send_via_protocol(phone, message):
-    """Send using whatsapp:// protocol"""
-    phone = clean_phone_number(phone)
-    encoded_message = urllib.parse.quote(message)
-    url = f"whatsapp://send?phone={phone}&text={encoded_message}"
-
-    try:
-        if platform.system() == "Windows":
-            os.startfile(url)
-        elif platform.system() == "Darwin":
-            subprocess.Popen(["open", url])
-        else:
-            subprocess.Popen(["xdg-open", url])
-        return True, "Opened WhatsApp Desktop"
-    except Exception as e:
-        return False, str(e)
-
-
-def send_via_browser(phone, message):
-    """Fallback: Send using web browser"""
-    phone = clean_phone_number(phone)
-    encoded_message = urllib.parse.quote(message)
-    url = f"https://wa.me/{phone}?text={encoded_message}"
-
-    try:
-        webbrowser.open(url)
-        return True, "Opened in browser"
-    except Exception as e:
-        return False, str(e)
-
-
-def send_whatsapp_message(phone, message, method="auto", exe_path=None, 
-                          auto_send=True, wait_time=12, callback=None):
-    """
-    Send WhatsApp message - with improved auto-send
-    
-    Parameters:
-        phone       - Phone number
-        message     - Message text
-        method      - "auto", "desktop", "protocol", "browser"
-        exe_path    - Custom WhatsApp.exe path
-        auto_send   - If True, automatically press Enter to send
-        wait_time   - Seconds to wait before pressing Enter (increased default)
-        callback    - Optional callback function
-    """
-    # Use robust auto-send if enabled and pyautogui available
-    if auto_send and HAS_AUTOGUI:
-        success, result_msg = send_and_auto_enter_robust(
-            phone, message, wait_time=wait_time)
-        if callback:
-            callback(success, result_msg)
-        return success
-
-    # Manual mode (just open, don't auto-send)
-    success = False
-    result_msg = ""
-
-    if method == "auto":
-        if not exe_path:
-            exe_path = find_whatsapp_exe()
-
-        if exe_path:
-            success, result_msg = send_via_desktop_exe(phone, message, exe_path)
-            if success:
-                if callback:
-                    callback(True, result_msg)
-                return True
-
-        success, result_msg = send_via_protocol(phone, message)
-        if success:
-            if callback:
-                callback(True, result_msg)
-            return True
-
-        success, result_msg = send_via_browser(phone, message)
-        if callback:
-            callback(success, result_msg)
-        return success
-
-    elif method == "desktop":
-        if not exe_path:
-            exe_path = find_whatsapp_exe()
-        success, result_msg = send_via_desktop_exe(phone, message, exe_path)
-
-    elif method == "protocol":
-        success, result_msg = send_via_protocol(phone, message)
-
-    elif method == "browser":
-        success, result_msg = send_via_browser(phone, message)
-
     if callback:
-        callback(success, result_msg)
-    return success
-
-
-def bulk_send_messages(vehicles, custom_message=None, delay=15,
-                       method="auto", auto_send=True,
-                       wait_time=12, progress_callback=None):
-    """
-    Send messages to multiple vehicles with robust auto-send
+        callback(result.success, result.message)
     
-    Parameters:
-        vehicles           - List of vehicle dicts
-        custom_message     - Optional custom template
-        delay              - Seconds between each message (increased default)
-        method             - Sending method
-        auto_send          - Auto press Enter to send
-        wait_time          - Wait time before pressing Enter
-        progress_callback  - Progress update function
+    return result.success
+
+
+def bulk_send_messages(vehicles: List[Dict],
+                      custom_message: Optional[str] = None,
+                      delay: int = 20,
+                      method: str = "auto",
+                      auto_send: bool = True,
+                      wait_time: int = 12,
+                      progress_callback: Optional[Callable] = None,
+                      send_profile: str = "standard") -> threading.Thread:
     """
-    def _send():
-        total = len(vehicles)
-        success_count = 0
-        failed_count = 0
-        exe_path = find_whatsapp_exe() if method in ("auto", "desktop") else None
-
-        # Auto-adjust delay: must be at least wait_time + buffer
-        # Increased buffer for stability
-        effective_delay = max(delay, wait_time + 5) if auto_send else delay
-
-        for i, vehicle in enumerate(vehicles):
-            msg = format_message(
-                vehicle["vehicle_number"],
-                vehicle.get("owner_name", ""),
-                vehicle["expiry_date"],
-                custom_message
-            )
-
-            try:
-                if auto_send and HAS_AUTOGUI:
-                    success, result_msg = send_and_auto_enter_robust(
-                        vehicle["phone"], msg, wait_time=wait_time)
-                else:
-                    success = send_whatsapp_message(
-                        vehicle["phone"], msg,
-                        method=method, exe_path=exe_path,
-                        auto_send=False)
-                    result_msg = "Opened"
-
-                if success:
-                    success_count += 1
-                    try:
-                        from database import log_message
-                        log_message(
-                            vehicle["id"],
-                            vehicle["vehicle_number"],
-                            vehicle["phone"],
-                            msg)
-                    except Exception:
-                        pass
-                else:
-                    failed_count += 1
-
-            except Exception as e:
-                failed_count += 1
-                print(f"Error sending to {vehicle.get('vehicle_number')}: {e}")
-
-            if progress_callback:
-                progress_callback(
-                    i + 1, total, success_count, failed_count,
-                    vehicle["vehicle_number"])
-
-            # Wait between messages (auto-adjusted for auto-send)
-            if i < total - 1:
-                time.sleep(effective_delay)
-
-        if progress_callback:
-            progress_callback(
-                total, total, success_count, failed_count, "DONE")
-
-    thread = threading.Thread(target=_send, daemon=True)
+    Send messages to multiple vehicles in a background thread
+    
+    Args:
+        vehicles: List of vehicle dicts with keys: id, vehicle_number, owner_name, expiry_date, phone
+        custom_message: Optional custom message template
+        delay: Delay between messages in seconds
+        method: Send method (unused, kept for compatibility)
+        auto_send: Whether to auto-send or just open
+        wait_time: Minimum wait time before sending
+        progress_callback: Callback function(current, total, success, failed, vehicle_number)
+        send_profile: Profile name (fast/standard/slow_pc/max_reliability)
+    
+    Returns:
+        Thread object (started)
+    """
+    try:
+        profile = SendProfile(send_profile)
+    except ValueError:
+        profile = SendProfile.STANDARD
+    
+    bulk_sender = BulkMessageSender(profile)
+    
+    def _send_thread():
+        bulk_sender.send_bulk(
+            vehicles=vehicles,
+            custom_message=custom_message,
+            delay=delay,
+            auto_send=auto_send,
+            wait_time=wait_time,
+            progress_callback=progress_callback
+        )
+    
+    thread = threading.Thread(target=_send_thread, daemon=True)
     thread.start()
     return thread
+
+
+# Backward compatibility aliases
+format_message = MessageFormatter.format_message
+clean_phone_number = MessageFormatter.clean_phone_number
+find_whatsapp_exe = lambda: session_manager.get_exe_path()
+get_send_profile_config = lambda profile: SEND_PROFILES.get(
+    SendProfile(profile) if isinstance(profile, str) else profile,
+    SEND_PROFILES[SendProfile.STANDARD]
+)

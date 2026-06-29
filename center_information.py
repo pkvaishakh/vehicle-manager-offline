@@ -1,7 +1,7 @@
 center_information = {
-    "name": "IDEAL VEHICLE PUC TESTING CENTER (PNR ROAD)",
-    "address": "പൂനൂർ  റോഡ് ,നരിക്കുനി, പെട്രോൾ പമ്പിന് സമീപം, 673585",
-    "phone": "+91 95677 86078",
-    "google_maps": "https://maps.app.goo.gl/Rpa4LGkaCriTAGUq8",
-    "working_hours": "Mon - Sat: 9:00 AM to 9:00 PM, Sun: 9:00 AM to 9:00 PM",
+    "name": "CMV വാഹന പുക പരിശോധന കേന്ദ്രം",
+    "address": "പാലോളിപ്പറമ്പ്, ആനമങ്ങാട്, പെരിന്തൽമണ്ണ",
+    "phone": "9605743641",
+    "google_maps": "https://maps.app.goo.gl/kk4UYdG3NpQv3wQg9",
+    "working_hours": "Mon - Sat: 8:30 AM to 6:30 PM, Friday 8.30 to 12 pm to 2.30 pm to 6.30 pm  Sun: As per request",
 }

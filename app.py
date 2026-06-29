@@ -9,6 +9,7 @@ from pages.dashboard import DashboardPage
 from pages.vehicles import VehiclesPage
 from pages.add_vehicle import AddVehiclePage
 from pages.whatsapp import WhatsAppPage
+from pages.sms import SMSPage
 
 
 class VehicleManagementApp:
@@ -106,6 +107,7 @@ class VehicleManagementApp:
             ("vehicles", "🚗  Vehicles"),
             ("add_vehicle", "➕  Add Vehicle"),
             ("whatsapp", "💬  WhatsApp"),
+            ("sms", "📩  SMS"),
         ]
 
         for page_name, label in nav_items:
@@ -214,6 +216,7 @@ class VehicleManagementApp:
             "vehicles": "🚗 Vehicle List",
             "add_vehicle": "➕ Add / Renew Vehicle",
             "whatsapp": "💬 WhatsApp Messaging",
+            "sms": "📩 SMS Reminders",
         }
         self.header_title.configure(text=titles.get(page_name, ""))
 
@@ -226,6 +229,8 @@ class VehicleManagementApp:
             self.current_page = AddVehiclePage(self.page_container, self)
         elif page_name == "whatsapp":
             self.current_page = WhatsAppPage(self.page_container, self)
+        elif page_name == "sms":
+            self.current_page = SMSPage(self.page_container, self)
 
     def show_page_with_data(self, page_name, data=None):
         """Show a page and pass data to it"""

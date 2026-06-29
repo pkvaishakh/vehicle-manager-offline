@@ -11,7 +11,7 @@ from database import (get_all_vehicles, get_expired_vehicles,
 from whatsapp_sender import (
     format_message, send_whatsapp_message, bulk_send_messages,
     get_whatsapp_status, find_whatsapp_exe, is_whatsapp_installed,
-    HAS_AUTOGUI
+    HAS_AUTOGUI, SEND_PROFILES
 )
 from datetime import date, datetime, timedelta
 
@@ -224,6 +224,30 @@ class WhatsAppPage:
                  font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]).pack(side="left")
 
+        profile_frame = tk.Frame(inner, bg=COLORS["bg_card"])
+        profile_frame.pack(fill="x", pady=(0, 10))
+
+        tk.Label(profile_frame, text="Reliability profile:",
+                 font=FONTS["small_bold"],
+                 bg=COLORS["bg_card"]).pack(side="left")
+
+        self.send_profile_var = tk.StringVar(value="slow_pc")
+        profile_values = list(SEND_PROFILES.keys())
+        self.profile_combo = ttk.Combobox(
+            profile_frame,
+            textvariable=self.send_profile_var,
+            values=profile_values,
+            state="readonly",
+            width=18)
+        self.profile_combo.pack(side="left", padx=(10, 5))
+
+        tk.Label(
+            profile_frame,
+            text="standard = faster, slow_pc = safer, max_reliability = slowest",
+            font=FONTS["small"],
+            bg=COLORS["bg_card"],
+            fg=COLORS["text_secondary"]).pack(side="left")
+
         # Exe path
         path_frame = tk.Frame(inner, bg=COLORS["bg_card"])
         path_frame.pack(fill="x", pady=(0, 5))
@@ -369,7 +393,7 @@ class WhatsAppPage:
         self.date_filter_frame.pack(fill="x", pady=(5, 10))
 
         date_row = tk.Frame(self.date_filter_frame, bg=COLORS["bg_card"])
-        date_row.pack(fill="x")
+        date_row.pack(fill="x") 
 
         # Expiry From
         tk.Label(date_row, text="📅 Expiry From:",
@@ -464,9 +488,8 @@ class WhatsAppPage:
                        highlightbackground=COLORS["border"]))
 
         # Quick date buttons
-        tk.Label(date_row, text="│", font=FONTS["small"],
-                 bg=COLORS["bg_card"],
-                 fg=COLORS["border"]).pack(side="left", padx=(0, 5))
+        quick_frame = tk.Frame(self.date_filter_frame, bg=COLORS["bg_card"])
+        quick_frame.pack(fill="x", pady=(8, 0))
 
         quick_dates = [
             ("Expired", self.set_expired_range),
@@ -478,7 +501,7 @@ class WhatsAppPage:
 
         for text, cmd in quick_dates:
             qbtn = tk.Label(
-                date_row, text=text, font=FONTS["small"],
+                quick_frame, text=text, font=FONTS["small"],
                 bg=COLORS["bg"], fg=COLORS["primary"],
                 padx=6, pady=2, cursor="hand2",
                 relief="solid", borderwidth=1)
@@ -1153,7 +1176,8 @@ class WhatsAppPage:
                 ph, msg, method=self.method_var.get(),
                 exe_path=self.exe_path_var.get().strip() or None,
                 auto_send=auto,
-                wait_time=self.wait_time_var.get())
+                wait_time=self.wait_time_var.get(),
+                send_profile=self.send_profile_var.get())
             self.add_log("✅ Test done")
 
         tk.Label(test_dialog, text="🚀 Send Test",
@@ -1180,7 +1204,8 @@ class WhatsAppPage:
             phone, msg, method=self.method_var.get(),
             exe_path=self.exe_path_var.get().strip() or None,
             auto_send=self.auto_send_var.get(),
-            wait_time=self.wait_time_var.get())
+            wait_time=self.wait_time_var.get(),
+            send_profile=self.send_profile_var.get())
 
         self.add_log(f"{'✅' if success else '❌'} {phone}")
 
@@ -1213,6 +1238,7 @@ class WhatsAppPage:
         wait = self.wait_time_var.get()
         delay = self.delay_var.get()
         mode = "AUTO" if auto else "Manual"
+        profile = self.send_profile_var.get()
 
         # Date range info
         date_info = ""
@@ -1229,6 +1255,7 @@ class WhatsAppPage:
             "Confirm",
             f"Send to {len(vehicles)} vehicle(s)?\n\n"
             f"Mode: {mode}\n"
+            f"Profile: {profile}\n"
             f"Target: {self.target_var.get()}"
             f"{date_info}\n"
             f"Delay: {delay}s"
@@ -1248,7 +1275,8 @@ class WhatsAppPage:
 
         self.add_log(f"\n{'='*50}")
         self.add_log(f"🚀 BULK SEND STARTED")
-        self.add_log(f"Mode: {mode} | Targets: {len(vehicles)}")
+        self.add_log(
+            f"Mode: {mode} | Profile: {profile} | Targets: {len(vehicles)}")
         if date_info:
             self.add_log(f"Date Range:{date_info}")
         self.add_log(f"{'='*50}\n")
@@ -1288,7 +1316,8 @@ class WhatsAppPage:
             vehicles, custom, delay,
             method=method, auto_send=auto,
             wait_time=wait,
-            progress_callback=progress_callback)
+            progress_callback=progress_callback,
+            send_profile=profile)
 
     def stop_bulk_send(self):
         self.sending = False
