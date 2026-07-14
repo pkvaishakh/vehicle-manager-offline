@@ -52,7 +52,30 @@ Option 3: With Icon
 
 option 4:
     .\.venv\Scripts\pyinstaller.exe --clean --onefile --windowed --icon app_icon.ico --name VehicleManager main.py
- 
+
+Important: 32-bit vs 64-bit builds
+- Build the EXE with the same Python architecture as the target PC.
+- 64-bit Python produces a 64-bit EXE and only runs on 64-bit Windows.
+- 32-bit Python produces a 32-bit EXE and can run on both 32-bit and 64-bit Windows.
+- You cannot build a 32-bit EXE using only a 64-bit Python interpreter.
+  PyInstaller always bundles the current Python runtime architecture.
+
+How to build a 32-bit EXE
+1) Install or use a 32-bit Python distribution on your build machine.
+2) Create a 32-bit virtual environment:
+    C:\Path\To\Python32\python.exe -m venv .venv32
+3) Activate the 32-bit environment:
+    .venv32\Scripts\activate
+4) Install requirements inside that environment:
+    python -m pip install -r requirements.txt
+5) Build the EXE from that environment:
+    python build.py
+
+To support both architectures:
+1) Build a 32-bit EXE with 32-bit Python/PyInstaller for older or 32-bit Windows.
+2) Build a 64-bit EXE with 64-bit Python/PyInstaller for modern 64-bit Windows.
+3) Distribute both EXEs when you need to support both target machines.
+
 -------------------------------------------------
 ✅ To “start fresh” (clear caches + rebuild)
 -------------------------------------------------
@@ -61,14 +84,16 @@ option 4:
     rmdir /s /q dist
     del /q *.spec
 
+2) Delete Python bytecode caches (optional but cleanest)
+    del /s /q *.pyc
+    rmdir /s /q __pycache__
+
     ✅ This removes:
     build (PyInstaller temporary build cache)
     dist (previous EXE outputs)
-    any old *.spec files 
+    any old *.spec files
 
-2) Delete Python bytecode caches (optional but cleanest) 
-    del /s /q *.pyc
-    rmdir /s /q __pycache__
+    ✅ This removes all .pyc files and __pycache__ folders so Python will recompile everything.
 
     ✅ This removes 
     all .pyc files and __pycache__ folders so Python will recompile everything.
