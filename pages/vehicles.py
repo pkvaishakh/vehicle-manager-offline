@@ -13,7 +13,7 @@ from whatsapp_sender import format_message, send_whatsapp_message
 from import_export import (export_to_csv, export_to_pdf,
                            import_from_csv, import_from_json,
                            generate_sample_csv)
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 # Try importing tkcalendar
 try:
@@ -23,6 +23,25 @@ except ImportError:
     HAS_CALENDAR = False
 
 import calendar as cal_module
+
+
+def calculate_validity_months(vehicle):
+    """Infer the vehicle term from its saved date and expiry date."""
+    try:
+        expiry = date.fromisoformat(vehicle["expiry_date"])
+        saved_at = vehicle.get("updated_at") or vehicle.get("created_at")
+        start = datetime.fromisoformat(saved_at).date()
+    except (KeyError, TypeError, ValueError):
+        return None
+
+    for months in (1, 3, 6, 12):
+        month_index = start.month - 1 + months
+        year = start.year + month_index // 12
+        month = month_index % 12 + 1
+        day = min(start.day, cal_module.monthrange(year, month)[1])
+        if expiry == date(year, month, day) - timedelta(days=1):
+            return months
+    return None
 
 
 class VehiclesPage:
@@ -83,6 +102,15 @@ class VehiclesPage:
             state="readonly", width=14, font=FONTS["small"])
         self.filter_status.set("All")
         self.filter_status.pack(side="left", padx=(5, 15))
+
+        tk.Label(row1, text="Validity:", font=FONTS["small"],
+                 bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
+                 ).pack(side="left")
+        self.filter_validity = ttk.Combobox(
+            row1, values=["All", "6 Months", "1 Year"],
+            state="readonly", width=12, font=FONTS["small"])
+        self.filter_validity.set("All")
+        self.filter_validity.pack(side="left", padx=(5, 15))
 
         tk.Label(row1, text="Call Status:", font=FONTS["small"],
                  bg=COLORS["bg_card"], fg=COLORS["text_secondary"]
@@ -653,7 +681,7 @@ class VehiclesPage:
         # Removed owner_name and vehicle_type; moved updated_at before expiry_date
         columns = (
             "id", "vehicle_number", "phone", "updated_at",
-            "expiry_date", "status", "call_status", "renewals"
+            "expiry_date", "validity", "status", "call_status", "renewals"
         )
 
         tree_scroll_y = ttk.Scrollbar(table_frame)
@@ -683,6 +711,7 @@ class VehiclesPage:
             "phone": ("Phone", 140),
             "updated_at": ("Updated", 160),
             "expiry_date": ("Expiry Date", 120),
+            "validity": ("Validity", 100),
             "status": ("Status", 110),
             "call_status": ("Call Status", 130),
             "renewals": ("Renewals", 90),
@@ -753,6 +782,12 @@ class VehiclesPage:
         if call_status and call_status != "All":
             filters["call_status"] = call_status
 
+        validity = self.filter_validity.get()
+        if validity == "6 Months":
+            filters["validity_months"] = 6
+        elif validity == "1 Year":
+            filters["validity_months"] = 12
+
         if self.filter_date_from_value:
             filters["expiry_from"] = self.filter_date_from_value.strftime("%Y-%m-%d")
         if self.filter_date_to_value:
@@ -770,10 +805,16 @@ class VehiclesPage:
             self.tree.delete(item)
 
         filters = self.get_filters()
+        validity_filter = filters.pop("validity_months", None)
         vehicles = get_all_vehicles(filters)
         today = date.today().strftime("%Y-%m-%d")
+        displayed_count = 0
 
         for v in vehicles:
+            validity_months = calculate_validity_months(v)
+            if validity_filter is not None and validity_months != validity_filter:
+                continue
+
             if v["expiry_date"] < today:
                 status = "❌ Expired"
                 tag = "expired"
@@ -787,23 +828,31 @@ class VehiclesPage:
                     status = "✅ Active"
                     tag = "active"
 
-            # Reordered tuple: id, vehicle_number, phone, updated_at, expiry_date, status, call_status, renewals
+            validity = {
+                6: "6 Months",
+                12: "1 Year",
+                1: "1 Month",
+                3: "3 Months",
+            }.get(validity_months, "Custom")
+
             self.tree.insert("", "end", values=(
                 v["id"],
                 v["vehicle_number"],
                 v["phone"],
                 v.get("updated_at", v.get("created_at", "")),
                 v["expiry_date"],
+                validity,
                 status,
                 v.get("call_status", "No response"),
                 v.get("renewal_count", 0)
             ), tags=(tag,))
+            displayed_count += 1
 
         self.tree.tag_configure("expired", background="#FEE2E2")
         self.tree.tag_configure("expiring", background="#FEF3C7")
         self.tree.tag_configure("active", background="#FFFFFF")
 
-        count = len(vehicles)
+        count = displayed_count
         self.count_label.configure(text=f"Showing {count} vehicle(s)")
 
         active_filters = []
@@ -825,6 +874,7 @@ class VehiclesPage:
         self.filter_vehicle.delete(0, "end")
         self.filter_phone.delete(0, "end")
         self.filter_status.set("All")
+        self.filter_validity.set("All")
 
         self.filter_date_from_value = None
         self.filter_date_to_value = None

@@ -1229,6 +1229,7 @@ class AddVehiclePage:
         # Only show vehicle's saved expiry while editing.
         if vehicle.get("expiry_date"):
             self.set_expiry_date(vehicle["expiry_date"])
+        self.refresh_duration_chips()
 
     def save_vehicle(self):
         vehicle_number = self.entry_vehicle.get().strip().upper()
